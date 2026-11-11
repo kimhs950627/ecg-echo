@@ -76,7 +76,35 @@
       </aside>
     </div>
 
+    
     <hr class="rule">
+    <div class="section-head"><h2>Baseline 성능 (실측)</h2><span class="idx">n = 57,337 train</span></div>
+    <p class="prose">같은 이미지·같은 split 에서 두 구조를 비교했습니다. 환자 단위 그룹 split 기준이며,
+    판독문 누수는 제거하지 않은 상태(원본 결과지)입니다.</p>
+    <div class="grid-2">
+      <div><table class="data"><caption>환자 단위 그룹 val — 정직한 숫자</caption><thead><tr><th>라벨</th><th>EfficientNetB0</th><th>ViT (small)</th></tr></thead><tbody><tr><td>LVEF ≤ 45%</td><td class="num">0.818</td><td class="num">0.478</td></tr><tr><td>LVWT ≥ 13 mm</td><td class="num">0.721</td><td class="num">0.497</td></tr><tr><td>AS ≥ moderate</td><td class="num">0.753</td><td class="num">0.514</td></tr><tr><td>AR ≥ moderate</td><td class="num">0.699</td><td class="num">0.461</td></tr><tr><td>MR ≥ moderate</td><td class="num">0.783</td><td class="num">0.469</td></tr><tr><td>TR ≥ moderate</td><td class="num">0.765</td><td class="num">0.493</td></tr><tr><td>PR ≥ moderate</td><td class="num">0.705</td><td class="num">0.416</td></tr><tr><td>RV dysfunction ≥ mod</td><td class="num">0.812</td><td class="num">0.508</td></tr><tr><td>Pericardial effusion</td><td class="num">0.708</td><td class="num">0.469</td></tr><tr><td>PASP ≥ 45 mmHg</td><td class="num">0.718</td><td class="num">0.512</td></tr><tr><td>TR max ≥ 3.2 m/s</td><td class="num">0.716</td><td class="num">0.534</td></tr><tr><td>SHD composite</td><td class="num">0.792</td><td class="num">0.476</td></tr><tr><td><b>macro AUROC</b></td><td class="num">0.749</td><td class="num">0.485</td></tr></tbody></table></div>
+      <div><table class="data"><caption>no_split 8,000장 — 학습에 전혀 쓰지 않은 외부 검증</caption><thead><tr><th>라벨</th><th>EfficientNetB0</th><th>ViT (small)</th></tr></thead><tbody><tr><td>LVEF ≤ 45%</td><td class="num">0.600</td><td class="num">0.601</td></tr><tr><td>LVWT ≥ 13 mm</td><td class="num">0.601</td><td class="num">0.519</td></tr><tr><td>AS ≥ moderate</td><td class="num">0.648</td><td class="num">0.590</td></tr><tr><td>AR ≥ moderate</td><td class="num">0.555</td><td class="num">0.508</td></tr><tr><td>MR ≥ moderate</td><td class="num">0.603</td><td class="num">0.549</td></tr><tr><td>TR ≥ moderate</td><td class="num">0.614</td><td class="num">0.563</td></tr><tr><td>PR ≥ moderate</td><td class="num">0.420</td><td class="num">0.432</td></tr><tr><td>RV dysfunction ≥ mod</td><td class="num">0.616</td><td class="num">0.565</td></tr><tr><td>Pericardial effusion</td><td class="num">0.512</td><td class="num">0.562</td></tr><tr><td>PASP ≥ 45 mmHg</td><td class="num">0.597</td><td class="num">0.420</td></tr><tr><td>TR max ≥ 3.2 m/s</td><td class="num">0.626</td><td class="num">0.411</td></tr><tr><td>SHD composite</td><td class="num">0.674</td><td class="num">0.405</td></tr><tr><td><b>macro AUROC</b></td><td class="num">0.589</td><td class="num">0.510</td></tr></tbody></table></div>
+    </div>
+    <div class="prose">
+      <h3>읽는 법 — 누수와 일반화</h3>
+      <p>같은 EfficientNetB0 의 macro AUROC 는 그룹 val <b>0.749</b>, 기존 val 중 <b>학습에서 본 환자</b> 0.835,
+      <b>못 본 환자</b> 0.775 입니다. 차이 <b>+0.086</b> 가 곧 환자 누수로 부풀려지는 양입니다 —
+      기존 split 을 그대로 썼다면 이만큼 높은 숫자를 보고했을 것입니다.</p>
+      <p>반대로 학습에 전혀 쓰지 않은 <code>no_split</code> 8,000장에서는 <b>0.589</b> 로 떨어집니다.
+      누수로 설명되지 않는 낙폭이라, 이 부분집합의 코호트·시대·검사 적응증 차이를 먼저 확인해야 합니다.</p>
+      <p>ViT(small) 는 2.86M params · 6 epoch 로 학습해 macro 0.485 — 사실상 학습되지 않았습니다.
+      구조 비교로 쓰려면 사전학습 가중치나 더 긴 스케줄이 필요합니다.</p>
+
+      <h3>설명 가능성</h3>
+      <p>EfficientNetB0 는 마지막 conv feature 에 대한 gradient 로 Grad-CAM 을, ViT 는 레이어별 attention 을
+      residual 보정해 곱한 attention rollout 을 씁니다. 두 지도가 겹치는 영역이 파형인지 인쇄 텍스트인지가
+      이 프로젝트의 핵심 점검 항목입니다.</p>
+      <p><b>실측 관찰</b>: EfficientNetB0 의 Grad-CAM 은 파형보다 <b>좌상단 환자·측정값 블록과 판독문 줄</b>에
+      질량이 몰립니다. LVEF 를 맞히는 데 파형보다 인쇄 텍스트를 쓰고 있을 가능성이 높다는 뜻이고,
+      헤더·판독문을 끈 ablation 렌더가 다음 필수 단계인 이유입니다.</p>
+    </div>
+    <figure class="figure"><img src="assets/explainers.png" alt="EfficientNetB0 Grad-CAM 과 ViT attention rollout 비교" width="1131" height="1546"></figure>
+
 
     <div class="grid-2">
       <div class="prose">

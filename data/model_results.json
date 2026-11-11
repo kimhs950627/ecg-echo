@@ -1,0 +1,181 @@
+{
+ "labels": [
+  "LVEF ≤ 45%",
+  "LVWT ≥ 13 mm",
+  "AS ≥ moderate",
+  "AR ≥ moderate",
+  "MR ≥ moderate",
+  "TR ≥ moderate",
+  "PR ≥ moderate",
+  "RV dysfunction ≥ mod",
+  "Pericardial effusion",
+  "PASP ≥ 45 mmHg",
+  "TR max ≥ 3.2 m/s",
+  "SHD composite"
+ ],
+ "models": {
+  "EfficientNetB0": {
+   "group_test": {
+    "LVEF ≤ 45%": 0.8225,
+    "LVWT ≥ 13 mm": 0.7147,
+    "AS ≥ moderate": 0.7858,
+    "AR ≥ moderate": 0.6216,
+    "MR ≥ moderate": 0.7929,
+    "TR ≥ moderate": 0.7643,
+    "PR ≥ moderate": 0.6846,
+    "RV dysfunction ≥ mod": 0.8097,
+    "Pericardial effusion": 0.6618,
+    "PASP ≥ 45 mmHg": 0.7179,
+    "TR max ≥ 3.2 m/s": 0.736,
+    "SHD composite": 0.7943
+   },
+   "group_val": {
+    "LVEF ≤ 45%": 0.8176,
+    "LVWT ≥ 13 mm": 0.7212,
+    "AS ≥ moderate": 0.7531,
+    "AR ≥ moderate": 0.6994,
+    "MR ≥ moderate": 0.7833,
+    "TR ≥ moderate": 0.7652,
+    "PR ≥ moderate": 0.7053,
+    "RV dysfunction ≥ mod": 0.812,
+    "Pericardial effusion": 0.7083,
+    "PASP ≥ 45 mmHg": 0.718,
+    "TR max ≥ 3.2 m/s": 0.7156,
+    "SHD composite": 0.7917
+   },
+   "no_split_external": {
+    "LVEF ≤ 45%": 0.5999,
+    "LVWT ≥ 13 mm": 0.6006,
+    "AS ≥ moderate": 0.6485,
+    "AR ≥ moderate": 0.5552,
+    "MR ≥ moderate": 0.6025,
+    "TR ≥ moderate": 0.6137,
+    "PR ≥ moderate": 0.4203,
+    "RV dysfunction ≥ mod": 0.6162,
+    "Pericardial effusion": 0.5123,
+    "PASP ≥ 45 mmHg": 0.5969,
+    "TR max ≥ 3.2 m/s": 0.6256,
+    "SHD composite": 0.6742
+   },
+   "old_val_seen": {
+    "LVEF ≤ 45%": 0.8712,
+    "LVWT ≥ 13 mm": 0.7401,
+    "AS ≥ moderate": 0.8248,
+    "AR ≥ moderate": 0.874,
+    "MR ≥ moderate": 0.8401,
+    "TR ≥ moderate": 0.8598,
+    "PR ≥ moderate": 0.9087,
+    "RV dysfunction ≥ mod": 0.8836,
+    "Pericardial effusion": 0.8288,
+    "PASP ≥ 45 mmHg": 0.7795,
+    "TR max ≥ 3.2 m/s": 0.7926,
+    "SHD composite": 0.8169
+   },
+   "old_val_unseen": {
+    "LVEF ≤ 45%": 0.859,
+    "LVWT ≥ 13 mm": 0.731,
+    "AS ≥ moderate": 0.7877,
+    "AR ≥ moderate": 0.7713,
+    "MR ≥ moderate": 0.8121,
+    "TR ≥ moderate": 0.8061,
+    "PR ≥ moderate": 0.6324,
+    "RV dysfunction ≥ mod": 0.8424,
+    "Pericardial effusion": 0.7272,
+    "PASP ≥ 45 mmHg": 0.7325,
+    "TR max ≥ 3.2 m/s": 0.7788,
+    "SHD composite": 0.8176
+   }
+  },
+  "ViT (small)": {
+   "group_test": {
+    "LVEF ≤ 45%": 0.4801,
+    "LVWT ≥ 13 mm": 0.4893,
+    "AS ≥ moderate": 0.5098,
+    "AR ≥ moderate": 0.3991,
+    "MR ≥ moderate": 0.4609,
+    "TR ≥ moderate": 0.5059,
+    "PR ≥ moderate": 0.4389,
+    "RV dysfunction ≥ mod": 0.5241,
+    "Pericardial effusion": 0.5,
+    "PASP ≥ 45 mmHg": 0.5059,
+    "TR max ≥ 3.2 m/s": 0.5276,
+    "SHD composite": 0.476
+   },
+   "group_val": {
+    "LVEF ≤ 45%": 0.4778,
+    "LVWT ≥ 13 mm": 0.4966,
+    "AS ≥ moderate": 0.5141,
+    "AR ≥ moderate": 0.4607,
+    "MR ≥ moderate": 0.4691,
+    "TR ≥ moderate": 0.4926,
+    "PR ≥ moderate": 0.4161,
+    "RV dysfunction ≥ mod": 0.5077,
+    "Pericardial effusion": 0.469,
+    "PASP ≥ 45 mmHg": 0.5117,
+    "TR max ≥ 3.2 m/s": 0.534,
+    "SHD composite": 0.4761
+   },
+   "no_split_external": {
+    "LVEF ≤ 45%": 0.6009,
+    "LVWT ≥ 13 mm": 0.5188,
+    "AS ≥ moderate": 0.5902,
+    "AR ≥ moderate": 0.5079,
+    "MR ≥ moderate": 0.5492,
+    "TR ≥ moderate": 0.563,
+    "PR ≥ moderate": 0.4316,
+    "RV dysfunction ≥ mod": 0.5649,
+    "Pericardial effusion": 0.5619,
+    "PASP ≥ 45 mmHg": 0.4201,
+    "TR max ≥ 3.2 m/s": 0.4109,
+    "SHD composite": 0.405
+   },
+   "old_val_seen": {
+    "LVEF ≤ 45%": 0.506,
+    "LVWT ≥ 13 mm": 0.4806,
+    "AS ≥ moderate": 0.501,
+    "AR ≥ moderate": 0.4589,
+    "MR ≥ moderate": 0.4427,
+    "TR ≥ moderate": 0.5117,
+    "PR ≥ moderate": 0.4623,
+    "RV dysfunction ≥ mod": 0.5038,
+    "Pericardial effusion": 0.5166,
+    "PASP ≥ 45 mmHg": 0.514,
+    "TR max ≥ 3.2 m/s": 0.5326,
+    "SHD composite": 0.4562
+   },
+   "old_val_unseen": {
+    "LVEF ≤ 45%": 0.4967,
+    "LVWT ≥ 13 mm": 0.4927,
+    "AS ≥ moderate": 0.4942,
+    "AR ≥ moderate": 0.5206,
+    "MR ≥ moderate": 0.4746,
+    "TR ≥ moderate": 0.4428,
+    "PR ≥ moderate": 0.4615,
+    "RV dysfunction ≥ mod": 0.5265,
+    "Pericardial effusion": 0.2499,
+    "PASP ≥ 45 mmHg": 0.5334,
+    "TR max ≥ 3.2 m/s": 0.4653,
+    "SHD composite": 0.4667
+   }
+  }
+ },
+ "macro": {
+  "EfficientNetB0": {
+   "group_test": 0.7422,
+   "group_val": 0.7492,
+   "no_split_external": 0.5888,
+   "old_val_seen": 0.835,
+   "old_val_unseen": 0.7748
+  },
+  "ViT (small)": {
+   "group_test": 0.4848,
+   "group_val": 0.4855,
+   "no_split_external": 0.5104,
+   "old_val_seen": 0.4905,
+   "old_val_unseen": 0.4687
+  }
+ },
+ "n_train": 57337,
+ "source": "khs224025/echonext-baseline",
+ "splits_note": "group_val / group_test / old_val_seen / old_val_unseen / no_split_external"
+}

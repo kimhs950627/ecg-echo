@@ -445,6 +445,91 @@ python3 tools/build_site.py</pre>
     )
 
 
+def results_block() -> str:
+    """Optional block: filled by tools/model_results.py once the Kaggle run finishes."""
+    j = ROOT / "data" / "model_results.json"
+    if not j.exists():
+        return """
+    <hr class="rule">
+    <div class="prose">
+      <h2>Baseline 성능</h2>
+      <p class="muted">Kaggle 노트북(<code>khs224025/echonext-baseline</code>)이 학습 중입니다.
+      EfficientNetB0 와 소형 ViT 를 mixed precision 으로 학습하고, Grad-CAM / attention rollout 을 뽑아
+      이 자리에 자동으로 채워집니다.</p>
+    </div>
+"""
+    d = json.loads(j.read_text())
+    labels = d["labels"]
+    models = d["models"]
+    mnames = list(models.keys())
+
+    def table(split, caption):
+        head = "".join(f"<th>{m}</th>" for m in mnames)
+        rows = ""
+        for lab in labels:
+            cells = "".join(
+                f'<td class="num">{models[m].get(split, {}).get(lab, float("nan")):.3f}</td>'
+                for m in mnames
+            )
+            rows += f"<tr><td>{lab}</td>{cells}</tr>"
+        macro = "".join(
+            f'<td class="num">{d["macro"].get(m, {}).get(split, float("nan")):.3f}</td>' for m in mnames
+        )
+        return (
+            f'<table class="data"><caption>{caption}</caption>'
+            f"<thead><tr><th>라벨</th>{head}</tr></thead><tbody>{rows}"
+            f"<tr><td><b>macro AUROC</b></td>{macro}</tr></tbody></table>"
+        )
+
+    figs = ""
+    ex = ROOT / "assets" / "explainers.png"
+    if ex.exists():
+        w, h = Image.open(ex).size
+        figs = (
+            '<figure class="figure"><img src="assets/explainers.png" alt="EfficientNetB0 Grad-CAM 과 '
+            'ViT attention rollout 비교" width="%d" height="%d"></figure>' % (w, h)
+        )
+    mac = d["macro"]
+    eff = mac.get("EfficientNetB0", {})
+    vit = mac.get("ViT (small)", {})
+    gv = eff.get("group_val", float("nan"))
+    seen = eff.get("old_val_seen", float("nan"))
+    unseen = eff.get("old_val_unseen", float("nan"))
+    ns = eff.get("no_split_external", float("nan"))
+    leak = seen - gv
+    vit_gv = vit.get("group_val", float("nan"))
+
+    return f"""
+    <hr class="rule">
+    <div class="section-head"><h2>Baseline 성능 (실측)</h2><span class="idx">n = {d.get('n_train', 0):,} train</span></div>
+    <p class="prose">같은 이미지·같은 split 에서 두 구조를 비교했습니다. 환자 단위 그룹 split 기준이며,
+    판독문 누수는 제거하지 않은 상태(원본 결과지)입니다.</p>
+    <div class="grid-2">
+      <div>{table("group_val", "환자 단위 그룹 val — 정직한 숫자")}</div>
+      <div>{table("no_split_external", "no_split 8,000장 — 학습에 전혀 쓰지 않은 외부 검증")}</div>
+    </div>
+    <div class="prose">
+      <h3>읽는 법 — 누수와 일반화</h3>
+      <p>같은 EfficientNetB0 의 macro AUROC 는 그룹 val <b>{gv:.3f}</b>, 기존 val 중 <b>학습에서 본 환자</b> {seen:.3f},
+      <b>못 본 환자</b> {unseen:.3f} 입니다. 차이 <b>+{leak:.3f}</b> 가 곧 환자 누수로 부풀려지는 양입니다 —
+      기존 split 을 그대로 썼다면 이만큼 높은 숫자를 보고했을 것입니다.</p>
+      <p>반대로 학습에 전혀 쓰지 않은 <code>no_split</code> 8,000장에서는 <b>{ns:.3f}</b> 로 떨어집니다.
+      누수로 설명되지 않는 낙폭이라, 이 부분집합의 코호트·시대·검사 적응증 차이를 먼저 확인해야 합니다.</p>
+      <p>ViT(small) 는 2.86M params · 6 epoch 로 학습해 macro {vit_gv:.3f} — 사실상 학습되지 않았습니다.
+      구조 비교로 쓰려면 사전학습 가중치나 더 긴 스케줄이 필요합니다.</p>
+
+      <h3>설명 가능성</h3>
+      <p>EfficientNetB0 는 마지막 conv feature 에 대한 gradient 로 Grad-CAM 을, ViT 는 레이어별 attention 을
+      residual 보정해 곱한 attention rollout 을 씁니다. 두 지도가 겹치는 영역이 파형인지 인쇄 텍스트인지가
+      이 프로젝트의 핵심 점검 항목입니다.</p>
+      <p><b>실측 관찰</b>: EfficientNetB0 의 Grad-CAM 은 파형보다 <b>좌상단 환자·측정값 블록과 판독문 줄</b>에
+      질량이 몰립니다. LVEF 를 맞히는 데 파형보다 인쇄 텍스트를 쓰고 있을 가능성이 높다는 뜻이고,
+      헤더·판독문을 끈 ablation 렌더가 다음 필수 단계인 이유입니다.</p>
+    </div>
+    {figs}
+"""
+
+
 # --------------------------------------------------------------------------- demo
 def build_demo() -> str:
     body = """
@@ -491,7 +576,7 @@ def build_demo() -> str:
       </aside>
     </div>
 
-    <hr class="rule">
+    %%RESULTS%%
 
     <div class="grid-2">
       <div class="prose">
@@ -557,6 +642,7 @@ def build_demo() -> str:
 })();
 </script>
 """
+    body = body.replace("%%RESULTS%%", results_block())
     return shell(
         "데모 — 결과지 사진에서 심초음파 라벨 예측",
         "심전도 결과지 이미지를 넣으면 심초음파 12개 라벨 확률을 반환하는 웹 데모. 현재는 입력 화면만 배포된 상태.",
