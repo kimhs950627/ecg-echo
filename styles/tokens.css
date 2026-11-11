@@ -1,0 +1,53 @@
+/* Design tokens — clay-sand (theme-advisor fingerprint 8f3f4fb100c8)
+   surface: site · density: balanced · texture: depth · motion: none */
+:root {
+  /* color */
+  --color-bg: #F4EDE3;
+  --color-surface: #FBF6EF;
+  --color-surface-alt: #F7F0E6;
+  --color-fg: #241A14;
+  --color-muted: #6F6860;
+  --color-accent: #AC5228;
+  --color-accent-soft: #CB9379;
+  --color-accent-deep: #6A3219;
+  --color-on-accent: #FFFFFF;
+  --color-border: #B6AEA5;
+  --color-grid: #E3CFC0;      /* ECG paper minor grid */
+  --color-grid-strong: #D9BFA9; /* ECG paper major grid */
+
+  /* type */
+  --font-display: "Gowun Batang", "MaruBuri", "KoPub Batang", "Nanum Myeongjo", serif;
+  --font-body: "Gowun Batang", "KoPub Batang", "Apple SD Gothic Neo", "Malgun Gothic", serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", monospace;
+
+  --text-xs: 0.78rem;
+  --text-sm: 0.88rem;
+  --text-base: 1.02rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2.1rem;
+  --text-3xl: clamp(2.4rem, 5.2vw, 3.9rem);
+
+  /* space (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+  --space-9: 104px;
+
+  /* radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* depth */
+  --shadow-soft: 0 1px 2px rgba(36, 26, 20, 0.06), 0 8px 24px -12px rgba(36, 26, 20, 0.18);
+  --shadow-deep: 0 2px 4px rgba(36, 26, 20, 0.08), 0 24px 48px -20px rgba(36, 26, 20, 0.32);
+
+  --maxw: 1080px;
+  --maxw-prose: 720px;
+}

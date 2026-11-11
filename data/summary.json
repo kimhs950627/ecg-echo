@@ -1,0 +1,469 @@
+{
+ "n_rows": 100000,
+ "n_cols": 55,
+ "splits": {
+  "train": 72475,
+  "val": 4626,
+  "test": 5442,
+  "no_split": 17457
+ },
+ "n_patients": 36286,
+ "ecg_per_patient": {
+  "median": 1.0,
+  "mean": 2.76,
+  "max": 195,
+  "pct_patients_multi_ecg": 45.9
+ },
+ "patients_in_multiple_splits": 4618,
+ "pct_patients_multiple_splits": 12.73,
+ "image_suffix": {
+  "png": 100000
+ },
+ "image_path_unique": true,
+ "image_path_matches_split": 100000,
+ "age": {
+  "missing_pct": 0.0,
+  "median": 63.0,
+  "q1": 51.0,
+  "q3": 73.0,
+  "min": 18.0,
+  "max": 90.0,
+  "pct_under_50": 22.3
+ },
+ "sex": {
+  "male": 53581,
+  "female": 46419
+ },
+ "labels": {
+  "LVEF ≤ 45%": {
+   "n": 23892,
+   "pct": 23.89
+  },
+  "LVWT ≥ 13 mm": {
+   "n": 24220,
+   "pct": 24.22
+  },
+  "AS ≥ moderate": {
+   "n": 4054,
+   "pct": 4.05
+  },
+  "AR ≥ moderate": {
+   "n": 1264,
+   "pct": 1.26
+  },
+  "MR ≥ moderate": {
+   "n": 8451,
+   "pct": 8.45
+  },
+  "TR ≥ moderate": {
+   "n": 10651,
+   "pct": 10.65
+  },
+  "PR ≥ moderate": {
+   "n": 821,
+   "pct": 0.82
+  },
+  "RV dysfunction ≥ mod": {
+   "n": 13243,
+   "pct": 13.24
+  },
+  "Pericardial effusion": {
+   "n": 3023,
+   "pct": 3.02
+  },
+  "PASP ≥ 45 mmHg": {
+   "n": 18993,
+   "pct": 18.99
+  },
+  "TR max ≥ 3.2 m/s": {
+   "n": 10212,
+   "pct": 10.21
+  },
+  "SHD composite": {
+   "n": 52188,
+   "pct": 52.19
+  }
+ },
+ "measurements": {
+  "Ventricular rate": {
+   "unit": "bpm",
+   "missing_pct": 0.0,
+   "median": 81.0,
+   "q1": 69.0,
+   "q3": 95.0
+  },
+  "PR interval": {
+   "unit": "ms",
+   "missing_pct": 10.37,
+   "median": 154.0,
+   "q1": 138.0,
+   "q3": 174.0
+  },
+  "QRS duration": {
+   "unit": "ms",
+   "missing_pct": 0.0,
+   "median": 90.0,
+   "q1": 80.0,
+   "q3": 102.0
+  },
+  "QTc": {
+   "unit": "ms",
+   "missing_pct": 0.0,
+   "median": 449.0,
+   "q1": 427.0,
+   "q3": 474.0
+  },
+  "LVEF": {
+   "unit": "%",
+   "missing_pct": 8.94,
+   "median": 57.5,
+   "q1": 45.0,
+   "q3": 62.5
+  },
+  "PASP": {
+   "unit": "mmHg",
+   "missing_pct": 43.42,
+   "median": 38.0,
+   "q1": 31.0,
+   "q3": 49.0
+  },
+  "TR max velocity": {
+   "unit": "m/s",
+   "missing_pct": 55.0,
+   "median": 2.7,
+   "q1": 2.3,
+   "q3": 3.1
+  },
+  "IVSd": {
+   "unit": "cm",
+   "missing_pct": 9.13,
+   "median": 1.1,
+   "q1": 1.0,
+   "q3": 1.2
+  },
+  "LVPWd": {
+   "unit": "cm",
+   "missing_pct": 9.12,
+   "median": 1.0,
+   "q1": 0.9,
+   "q3": 1.2
+  }
+ },
+ "missing_top": [
+  {
+   "col": "tr_max_velocity_value",
+   "pct": 55.0
+  },
+  {
+   "col": "pasp_value",
+   "pct": 43.42
+  },
+  {
+   "col": "pericardial_effusion_value",
+   "pct": 11.82
+  },
+  {
+   "col": "pr_interval",
+   "pct": 10.37
+  },
+  {
+   "col": "ivs_measurement",
+   "pct": 9.13
+  },
+  {
+   "col": "lvpw_measurement",
+   "pct": 9.12
+  },
+  {
+   "col": "rv_systolic_function_value",
+   "pct": 9.1
+  },
+  {
+   "col": "tricuspid_regurgitation_value",
+   "pct": 9.04
+  },
+  {
+   "col": "aortic_stenosis_value",
+   "pct": 9.0
+  },
+  {
+   "col": "aortic_regurgitation_value",
+   "pct": 9.0
+  },
+  {
+   "col": "mitral_regurgitation_value",
+   "pct": 9.0
+  },
+  {
+   "col": "lvef_value",
+   "pct": 8.94
+  },
+  {
+   "col": "pulmonary_regurgitation_value",
+   "pct": 8.94
+  },
+  {
+   "col": "pr",
+   "pct": 4.17
+  },
+  {
+   "col": "qrs_axis",
+   "pct": 0.96
+  }
+ ],
+ "interpretation": {
+  "nonempty_pct": 100.0,
+  "unique_strings": 106,
+  "mean_phrases": 2.9,
+  "top": [
+   {
+    "phrase": "SINUS RHYTHM",
+    "n": 79861,
+    "pct": 79.9
+   },
+   {
+    "phrase": "ABNORMAL ECG",
+    "n": 61152,
+    "pct": 61.2
+   },
+   {
+    "phrase": "NORMAL ECG",
+    "n": 38848,
+    "pct": 38.8
+   },
+   {
+    "phrase": "PROLONGED QT INTERVAL",
+    "n": 36861,
+    "pct": 36.9
+   },
+   {
+    "phrase": "SINUS TACHYCARDIA",
+    "n": 18509,
+    "pct": 18.5
+   },
+   {
+    "phrase": "LEFT AXIS DEVIATION",
+    "n": 15202,
+    "pct": 15.2
+   },
+   {
+    "phrase": "INTRAVENTRICULAR CONDUCTION DELAY",
+    "n": 13005,
+    "pct": 13.0
+   },
+   {
+    "phrase": "FIRST DEGREE AV BLOCK",
+    "n": 12713,
+    "pct": 12.7
+   },
+   {
+    "phrase": "RIGHT AXIS DEVIATION",
+    "n": 4344,
+    "pct": 4.3
+   },
+   {
+    "phrase": "LEFT VENTRICULAR HYPERTROPHY BY VOLTAGE CRITERIA",
+    "n": 3080,
+    "pct": 3.1
+   },
+   {
+    "phrase": "SINUS BRADYCARDIA",
+    "n": 1630,
+    "pct": 1.6
+   }
+  ]
+ },
+ "label_corr_top": [
+  {
+   "a": "PASP ≥ 45 mmHg",
+   "b": "TR max ≥ 3.2 m/s",
+   "phi": 0.648
+  },
+  {
+   "a": "LVWT ≥ 13 mm",
+   "b": "SHD composite",
+   "phi": 0.541
+  },
+  {
+   "a": "LVEF ≤ 45%",
+   "b": "SHD composite",
+   "phi": 0.536
+  },
+  {
+   "a": "PASP ≥ 45 mmHg",
+   "b": "SHD composite",
+   "phi": 0.463
+  },
+  {
+   "a": "TR ≥ moderate",
+   "b": "PASP ≥ 45 mmHg",
+   "phi": 0.438
+  }
+ ],
+ "prevalence_by_age": {
+  "<30": {
+   "LVEF ≤ 45%": 17.1,
+   "LVWT ≥ 13 mm": 13.4,
+   "AS ≥ moderate": 0.1,
+   "AR ≥ moderate": 0.7,
+   "MR ≥ moderate": 4.8,
+   "TR ≥ moderate": 12.4,
+   "PR ≥ moderate": 1.4,
+   "RV dysfunction ≥ mod": 14.1,
+   "Pericardial effusion": 3.9,
+   "PASP ≥ 45 mmHg": 14.6,
+   "TR max ≥ 3.2 m/s": 9.4,
+   "SHD composite": 36.3
+  },
+  "30s": {
+   "LVEF ≤ 45%": 16.9,
+   "LVWT ≥ 13 mm": 18.4,
+   "AS ≥ moderate": 0.1,
+   "AR ≥ moderate": 0.8,
+   "MR ≥ moderate": 5.5,
+   "TR ≥ moderate": 11.0,
+   "PR ≥ moderate": 1.1,
+   "RV dysfunction ≥ mod": 14.0,
+   "Pericardial effusion": 3.7,
+   "PASP ≥ 45 mmHg": 15.7,
+   "TR max ≥ 3.2 m/s": 9.3,
+   "SHD composite": 41.8
+  },
+  "40s": {
+   "LVEF ≤ 45%": 21.7,
+   "LVWT ≥ 13 mm": 22.5,
+   "AS ≥ moderate": 0.2,
+   "AR ≥ moderate": 1.0,
+   "MR ≥ moderate": 5.9,
+   "TR ≥ moderate": 9.8,
+   "PR ≥ moderate": 0.8,
+   "RV dysfunction ≥ mod": 16.4,
+   "Pericardial effusion": 4.3,
+   "PASP ≥ 45 mmHg": 15.0,
+   "TR max ≥ 3.2 m/s": 6.0,
+   "SHD composite": 45.0
+  },
+  "50s": {
+   "LVEF ≤ 45%": 21.9,
+   "LVWT ≥ 13 mm": 24.5,
+   "AS ≥ moderate": 0.6,
+   "AR ≥ moderate": 0.9,
+   "MR ≥ moderate": 5.9,
+   "TR ≥ moderate": 8.8,
+   "PR ≥ moderate": 0.8,
+   "RV dysfunction ≥ mod": 13.1,
+   "Pericardial effusion": 3.6,
+   "PASP ≥ 45 mmHg": 16.7,
+   "TR max ≥ 3.2 m/s": 9.0,
+   "SHD composite": 48.5
+  },
+  "60s": {
+   "LVEF ≤ 45%": 24.9,
+   "LVWT ≥ 13 mm": 26.2,
+   "AS ≥ moderate": 2.0,
+   "AR ≥ moderate": 1.5,
+   "MR ≥ moderate": 8.2,
+   "TR ≥ moderate": 8.1,
+   "PR ≥ moderate": 0.8,
+   "RV dysfunction ≥ mod": 12.8,
+   "Pericardial effusion": 3.0,
+   "PASP ≥ 45 mmHg": 17.9,
+   "TR max ≥ 3.2 m/s": 9.5,
+   "SHD composite": 52.4
+  },
+  "70s": {
+   "LVEF ≤ 45%": 27.1,
+   "LVWT ≥ 13 mm": 24.0,
+   "AS ≥ moderate": 7.1,
+   "AR ≥ moderate": 1.8,
+   "MR ≥ moderate": 10.1,
+   "TR ≥ moderate": 11.4,
+   "PR ≥ moderate": 0.5,
+   "RV dysfunction ≥ mod": 12.1,
+   "Pericardial effusion": 1.8,
+   "PASP ≥ 45 mmHg": 21.4,
+   "TR max ≥ 3.2 m/s": 11.7,
+   "SHD composite": 58.1
+  },
+  "80+": {
+   "LVEF ≤ 45%": 29.4,
+   "LVWT ≥ 13 mm": 30.1,
+   "AS ≥ moderate": 18.1,
+   "AR ≥ moderate": 1.5,
+   "MR ≥ moderate": 17.1,
+   "TR ≥ moderate": 18.6,
+   "PR ≥ moderate": 0.9,
+   "RV dysfunction ≥ mod": 12.4,
+   "Pericardial effusion": 1.7,
+   "PASP ≥ 45 mmHg": 29.8,
+   "TR max ≥ 3.2 m/s": 17.0,
+   "SHD composite": 69.8
+  }
+ },
+ "location_setting": {
+  "inpatient": 48162,
+  "emergency": 31453,
+  "outpatient": 17194,
+  "procedural": 3191
+ },
+ "acquisition_year": {
+  "2008": 162,
+  "2009": 4015,
+  "2010": 5700,
+  "2011": 5481,
+  "2012": 5884,
+  "2013": 6913,
+  "2014": 7274,
+  "2015": 7505,
+  "2016": 8519,
+  "2017": 9617,
+  "2018": 8020,
+  "2019": 5791,
+  "2020": 7446,
+  "2021": 9277,
+  "2022": 8396
+ },
+ "figures": {
+  "split_sizes": {
+   "file": "split_sizes.png",
+   "bytes": 26011
+  },
+  "age_sex": {
+   "file": "age_sex.png",
+   "bytes": 38868
+  },
+  "label_prevalence": {
+   "file": "label_prevalence.png",
+   "bytes": 85392
+  },
+  "numeric_dist": {
+   "file": "numeric_dist.png",
+   "bytes": 63101
+  },
+  "label_corr": {
+   "file": "label_corr.png",
+   "bytes": 116299
+  },
+  "prevalence_by_age": {
+   "file": "prevalence_by_age.png",
+   "bytes": 81205
+  },
+  "lvef": {
+   "file": "lvef.png",
+   "bytes": 50930
+  },
+  "missingness": {
+   "file": "missingness.png",
+   "bytes": 64276
+  },
+  "interpretation": {
+   "file": "interpretation.png",
+   "bytes": 69929
+  },
+  "year_setting": {
+   "file": "year_setting.png",
+   "bytes": 44638
+  }
+ },
+ "generated_by": "tools/make_eda.py"
+}

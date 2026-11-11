@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>학습 전략 — ECG→Echo 이미지 모델</title>
+<meta name="description" content="EchoNext 100k 렌더 데이터셋으로 심전도 이미지에서 심초음파 라벨을 예측하는 모델의 학습 전략: 누수 통제, 단계별 커리큘럼, 평가 설계, Kaggle 예산.">
+<link rel="canonical" href="https://kimhs950627.github.io/ecg-echo/plan.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="학습 전략 — ECG→Echo 이미지 모델">
+<meta property="og:description" content="10만 장 렌더 결과지로 12개 심초음파 라벨을 학습하는 단계별 계획과 평가 설계.">
+<meta property="og:url" content="https://kimhs950627.github.io/ecg-echo/plan.html">
+<meta property="og:image" content="https://kimhs950627.github.io/ecg-echo/assets/samples/ecg_0000861.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#F4EDE3">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/site.css">
+</head>
+<body>
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="dot" aria-hidden="true"></span>ECG<b>→</b>Echo<span class="full">&nbsp;Report</span></a>
+    <nav aria-label="주요 섹션"><ul class="tabs">
+      <li><a href="index.html">표지</a></li>
+      <li><a href="eda.html">EDA 리포트</a></li>
+      <li><a href="demo.html">데모</a></li>
+      <li><a href="plan.html" aria-current="page">학습 전략</a></li>
+    </ul></nav>
+  </div>
+</header>
+<main id="main">
+
+<section class="hero" style="padding-bottom:var(--space-6)">
+  <div class="wrap" style="grid-template-columns:1fr">
+    <div class="prose">
+      <p class="eyebrow">Tab 3 · Training strategy</p>
+      <h1 style="font-size:var(--text-2xl)">선행연구가 말하는 것,<br>우리가 해야 할 것</h1>
+      <p class="lead">같은 문제를 이미 수백만 쌍으로 푼 연구가 있습니다. 그 결론을 그대로 베끼지 않고,
+      이 데이터셋(10만 장 · 36,286명 · 12 라벨)의 제약에 맞춰 다시 짠 계획입니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:var(--space-4)">
+  <div class="wrap">
+    <div class="section-head"><h2>1. 선행연구에서 확정된 사실</h2><span class="idx">01 / 07</span></div>
+    <div class="grid-2">
+      <div class="prose">
+        <p><b>① 다중 라벨 합성이 정답이다.</b> EchoNext(Nature 2025)는 70만–120만 ECG-초음파 쌍,
+        23만 명으로 학습했고, 저자들은 라벨 간 공선성이 크기 때문에 단일 라벨이 아니라
+        <b>다중 라벨(multilabel) 접근</b>이 합성 지표(SHD composite)를 더 잘 잡는다고 명시했습니다.</p>
+        <p><b>② 진짜 적은 분포 이동이다.</b> 외부 병원 3곳(Cedars-Sinai 10,177 · Montreal 10,862 · UCSF 6,106)에서
+        AUROC 가 내부 83%에서 78–80%로 5–7%p 떨어졌고, 커뮤니티 코호트(PREVUE-VALVE, 65–85세 재택 ECG)에서는
+        <b>71%</b>까지 내려갔습니다. 유병률이 43% → 8%로 바뀌면 같은 모델이 다른 도구가 됩니다.</p>
+        <p><b>③ 전향 배포의 성적은 재현 가능하다.</b> 85,000명에게 배포했을 때 9%를 고위험으로 표시했고,
+        그중 초음파를 찍은 사람의 약 3/4 이 실제 SHD 로 진단돼 기존 진단 경로 대비 수율이 약 2배였습니다.</p>
+      </div>
+      <div class="prose">
+        <p><b>④ 같은 데이터로 이미 벤치마크가 있다.</b> PhysioNet EchoNext Mini-Model(우리가 쓰는 10만 장 부분집합)로
+        학습한 2026년 프리프린트에서 단순 CNN·TCN 계열이 AUROC 0.86 수준을 보고했습니다.
+        즉 <b>“잘 만든 baseline 은 0.85 근처”</b>가 현실적 기준선이고, 우리 목표는 그 위에서
+        누수 없는 평가·사진 강건성·배포입니다.</p>
+        <p><b>⑤ 라벨 하나짜리 문제는 이미 RCT 까지 갔다.</b> Mayo 의 low-EF AI-ECG 는 무작위 임상시험(Nat Med 2021)에서
+        진단율을 올렸습니다. LVEF ≤ 45% 는 가장 성숙한 타깃이므로, 우리도 <b>주 지표는 LVEF</b>,
+        나머지 11개는 보조 지표로 두는 편이 안전합니다.</p>
+        <p class="muted">출처는 7절.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>2. 우리 데이터의 제약 세 가지</h2><span class="idx">02 / 07</span></div>
+    <div class="cards">
+      <article class="card">
+        <p class="n">제약 1</p>
+        <h3>환자 누수</h3>
+        <p>36,286명 중 4,618명(12.7%)이 둘 이상의 split 에 등장합니다. 그대로 학습하면 val/test 성능이
+        부풀려집니다. <b>학습 전에 patient_key 그룹 split 을 다시 만드는 것이 0순위 작업</b>입니다.</p>
+      </article>
+      <article class="card">
+        <p class="n">제약 2</p>
+        <h3>텍스트 누수</h3>
+        <p>결과지에 인쇄된 판독문(“ABNORMAL ECG” 61%, “LEFT AXIS DEVIATION” 등)이 라벨과 직접 상관합니다.
+        헤더·판독문을 끈 변형으로 <b>이미지 기여도를 분리 측정</b>해야 합니다.</p>
+      </article>
+      <article class="card">
+        <p class="n">제약 3</p>
+        <h3>합성 이미지 → 실사진</h3>
+        <p>학습 이미지는 정면·무왜곡 렌더입니다. 실제 입력은 손떨림·원근·조명이 있는 사진이라
+        도메인 간극이 큽니다. 증강과 문서 정면화가 성능의 절반입니다.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>3. 단계별 계획</h2><span class="idx">03 / 07</span></div>
+
+    <h3>Stage 0 — 데이터 정비 (GPU 불필요)</h3>
+    <ul class="prose">
+      <li><b>그룹 split</b>: patient_key 기준 70/15/15 로 새 split 을 만들고, 기존 no_split 17,457장은
+      <b>외부 검증</b>으로 고정. 기존 Kaggle split 은 “참고용”으로만 병기.</li>
+      <li><b>라벨 확정</b>: 12개 이진 라벨 + LVEF 회귀(보조). PASP·TR max 는 결측이 43–55% 이므로
+      라벨로만 쓰고 입력에는 넣지 않음.</li>
+      <li><b>누수 변형 렌더</b>: <code>--no-header --no-interpretation</code> 으로 2만 장(각 split 비례)을
+      별도 렌더. 같은 split 정의를 그대로 사용해야 A/B 비교가 성립.</li>
+      <li><b>썸네일 캐시</b>: 224×224 uint8 npy(약 15GB → 100k×224×224 = 15GB, float16 회피)를 만들어
+      매 epoch 디코딩 비용을 제거. Kaggle Dataset 으로 1회만 만들면 학습 속도가 3–5배 빨라짐.</li>
+    </ul>
+
+    <h3>Stage 1 — 베이스라인 (Kaggle GPU, 1회 1–2시간)</h3>
+    <ul class="prose">
+      <li>모델: ResNet18 / DenseNet121 (torchvision, ImageNet pretrained), 입력 224×224, 출력 12 sigmoid.</li>
+      <li>손실: BCE + 라벨별 <code>pos_weight</code>(음성/양성 비율). PR ≥ moderate(0.8%)처럼 희귀한 라벨에서
+      focal loss 와 비교.</li>
+      <li>목표: LVEF ≤ 45% AUROC <b>0.85 이상</b>, SHD composite 0.80 이상. 이 아래면 데이터 파이프라인을
+      먼저 의심(라벨 정렬·경로 오류).</li>
+      <li>판독문 있는 버전과 없는 버전을 <b>같은 조건으로 두 번</b> 학습 → AUROC 차이가 곧 텍스트 누수의 크기.</li>
+    </ul>
+
+    <h3>Stage 2 — 해상도·구조 (반복 실험)</h3>
+    <ul class="prose">
+      <li>해상도: 224 → 384 → 448. 파형의 미세 진폭(QRS 폭·ST 변화)이 정보이므로 해상도가 가장 큰 레버일 가능성이 큼.
+      단, 448 입력은 배치·시간이 4배.</li>
+      <li>구조: ConvNeXt-T / EfficientNet-B0 / ViT-S 중 2개만 비교. 12유도를 채널로 분리해 넣는 lead-wise stem 도 후보.</li>
+      <li>보조 입력: 나이·성별을 별도 MLP branch 로 넣고, <b>이미지 단독 성능을 항상 함께 보고</b>(나이 단축 방지).</li>
+    </ul>
+
+    <h3>Stage 3 — 사진 강건성</h3>
+    <ul class="prose">
+      <li>증강: 회전 ±8°, 원근 변환, 조명 그라디언트, 그림자, 모션 블러, JPEG q40–90, 종이 접힘.</li>
+      <li>실사진 소수(직접 촬영 50–100장)를 라벨 없이 모아 <b>도메인 적응 검증</b>에 사용. 라벨이 없어도
+      예측 분포가 무너지는지(평균 확률 이동·confidence collapse) 확인 가능.</li>
+      <li>입력 파이프라인: 문서 검출 → 원근 보정 → 회색조·CLAHE → 224 리사이즈. 데모와 학습이 같은 코드를 쓰게 한다.</li>
+    </ul>
+
+    <h3>Stage 4 — 운영점과 보정</h3>
+    <ul class="prose">
+      <li>AUROC 만 보지 않고 <b>보정(ECE·Brier)</b>과 <b>threshold 선택</b>을 라벨별로 수행.
+      스크리닝이므로 high-sensitivity 운영점(예: NPV 우선)을 기본으로 제시.</li>
+      <li>DCA(decision curve)로 “초음파를 더 찍는 것이 이득인 임계 확률”을 제시.</li>
+      <li>하위군 보고: 성별·연령대·진료 세팅(응급/입원/외래). 데이터에 race_ethnicity 가 있으므로 형평성 지표도 함께.</li>
+    </ul>
+
+    <h3>Stage 5 — 배포</h3>
+    <ul class="prose">
+      <li>PyTorch → ONNX (opset 17) → onnxruntime-web. 224 입력 기준 모델 크기 15–45MB로 압축(양자화 int8).</li>
+      <li>웹 데모 탭에 실제 가중치 연결 → PC 앱(Electron/ Tauri) → APK(CameraX + ONNX Runtime Mobile).</li>
+      <li>모든 배포본에 “연구용, 진단 대체 아님” 고지 + 입력 이미지 비전송(클라이언트 추론) 유지.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>4. 평가 설계</h2><span class="idx">04 / 07</span></div>
+    <table class="data">
+      <caption>보고할 지표와 이유</caption>
+      <thead><tr><th>지표</th><th>대상</th><th>왜</th></tr></thead>
+      <tbody>
+        <tr><td>AUROC</td><td>라벨별 + macro</td><td>선행연구와 직접 비교 가능한 공통 지표</td></tr>
+        <tr><td>AUPRC</td><td>희귀 라벨(PR 0.8%, AR 1.3%)</td><td>불균형에서 AUROC 는 낙관적</td></tr>
+        <tr><td>Sensitivity @ fixed specificity</td><td>LVEF·SHD</td><td>스크리닝 운영점은 여기서 결정</td></tr>
+        <tr><td>ECE / Brier</td><td>전 라벨</td><td>확률을 그대로 보여주는 UI 이므로 보정 필수</td></tr>
+        <tr><td>Δ AUROC (판독문 유/무)</td><td>전 라벨</td><td>텍스트 누수 크기 정량화</td></tr>
+        <tr><td>Group split vs 기존 split</td><td>LVEF·SHD</td><td>환자 누수로 부풀려진 정도</td></tr>
+        <tr><td>하위군 AUROC</td><td>성별·연령대·세팅</td><td>형평성·일반화</td></tr>
+      </tbody>
+    </table>
+    <p class="prose">보고 형식은 “내부 split / 그룹 split / no_split 외부” 세 열을 항상 같이 제시합니다.
+    한 숫자만 보고하면 이 데이터에서는 어떤 결론도 방어할 수 없습니다.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>5. Kaggle 예산</h2><span class="idx">05 / 07</span></div>
+    <div class="grid-2">
+      <table class="data">
+        <caption>GPU 시간 추정 (T4 ×2, 72,475 학습 이미지)</caption>
+        <thead><tr><th>단계</th><th>epoch</th><th>추정</th></tr></thead>
+        <tbody>
+          <tr><td>224px ResNet18 baseline</td><td class="num">12</td><td class="num">1.5 h</td></tr>
+          <tr><td>384px</td><td class="num">12</td><td class="num">4 h</td></tr>
+          <tr><td>448px 또는 ConvNeXt-T</td><td class="num">10</td><td class="num">8 h</td></tr>
+          <tr><td>누수 A/B 재학습</td><td class="num">12</td><td class="num">1.5 h</td></tr>
+          <tr><td>사진 증강 파인튜닝</td><td class="num">8</td><td class="num">2 h</td></tr>
+        </tbody>
+      </table>
+      <div class="prose">
+        <p>주당 GPU 할당(약 30시간) 안에서 <b>2주</b>면 Stage 1–3 을 끝낼 수 있습니다.
+        가장 비싼 실험(448px)은 Stage 1 에서 해상도 민감도가 확인된 뒤에만 실행합니다.</p>
+        <p>스토리지: 이미지 4.3 GB + 썸네일 캐시 15 GB + 체크포인트. Kaggle Dataset 상한 안에서 여유가 있습니다.</p>
+        <p class="muted">수치는 4 worker 렌더 실측(0.20 s/장)과 통상적인 T4 처리량에서 계산한 추정입니다.
+        첫 실행에서 실측으로 대체합니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>6. 리스크와 중단 기준</h2><span class="idx">06 / 07</span></div>
+    <div class="callout">
+      <h3>이 숫자가 안 나오면 전략을 바꾼다</h3>
+      <p>① 224px 베이스라인에서 LVEF AUROC &lt; 0.80 이면 → 라벨 정렬·경로 오류를 먼저 점검(모델 문제로 보지 않음).</p>
+      <p>② 그룹 split 과 기존 split 의 AUROC 차이가 0.02 미만이면 → 환자 누수는 이 데이터에서 무시 가능, 이후 실험은 기존 split 로 단축.</p>
+      <p>③ 판독문 유/무 차이가 0.05 이상이면 → 텍스트 누수 통제 없는 결과는 폐기하고 이미지 단독 성능만 보고.</p>
+      <p>④ 448px 가 224px 대비 +0.01 미만이면 → 해상도 실험 중단, 증강·강건성에 자원 이동.</p>
+    </div>
+    <div class="prose">
+      <h3>남는 위험</h3>
+      <ul>
+        <li><b>합성→실사 간극</b>: 이 계획의 최대 미지수. 웹 데모에 실제 촬영 사진을 넣었을 때 성능이 유지되는지가
+        배포 성공을 판정하는 기준입니다.</li>
+        <li><b>스펙트럼 편향</b>: 응급 31,453 · 입원 48,162 로 중증 편향. 커뮤니티 유병률(8%)에서는 AUROC 가
+        크게 떨어질 수 있습니다(선행연구 71%).</li>
+        <li><b>임상 사용 금지선</b>: 연구·교육용 데모로만 배포하고, 진단·치료 결정에 쓰지 않는다는 고지를 유지합니다.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>7. 참고문헌</h2><span class="idx">07 / 07</span></div>
+    <ol class="prose" style="font-size:var(--text-sm)">
+      <li>Poterucha TJ, Elias P, et al. Detecting structural heart disease from electrocardiograms using AI.
+      <i>Nature</i>. 2025. doi:10.1038/s41586-025-09227-0 —
+      <a href="https://www.nature.com/articles/s41586-025-09227-0">nature.com</a></li>
+      <li>Elias P, Finer J. EchoNext: A Dataset for Detecting Echocardiogram-Confirmed Structural Heart Disease from ECGs (v1.1.1).
+      PhysioNet. — <a href="https://physionet.org/content/echonext">physionet.org/content/echonext</a></li>
+      <li>AI-ECG Detection of Structural Heart Disease in the Community Setting: Transportability and Spectrum Effects
+      in PREVUE-VALVE. PubMed 42615442. — <a href="https://pubmed.ncbi.nlm.nih.gov/42615442/">pubmed</a></li>
+      <li>Yao X, et al. AI-enabled electrocardiograms for identification of patients with low ejection fraction:
+      a pragmatic, randomized clinical trial. <i>Nat Med</i>. 2021;27:815–819.</li>
+      <li>Multimodal Deep Learning for Structural Heart Disease Prediction (EchoNext Mini-Model subset benchmark).
+      medRxiv preprint, 2026. — <a href="https://www.medrxiv.org/content/10.64898/2026.02.22.26346793v1.full.pdf">medrxiv</a></li>
+      <li>NewYork-Presbyterian. EchoNext receives FDA clearance to aid early detection of structural heart disease. —
+      <a href="https://www.nyp.org/advances/article/cardiology/ai-model-echonext-receives-fda-clearance-to-aid-early-detection-of-structural-heart-disease">nyp.org</a></li>
+    </ol>
+    <p class="muted" style="font-size:var(--text-xs)">수치(70만–120만 쌍, 외부 AUROC 78–80%, 배포 85,000명·9%·2배 수율, PREVUE-VALVE 71%)는
+    위 문헌의 초록·본문에서 인용했습니다. 우리 데이터 수치는 <a href="eda.html">EDA 리포트</a>에서 코드로 계산한 값입니다.</p>
+  </div>
+</section>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <p class="footer-note">EchoNext 공개 파형(100,000 ECG)을 GE MAC5K 결과지 레이아웃으로 렌더해 만든 연구용 이미지 데이터셋.
+      원본 파형과 환자 단위 metadata 는 공개 페이지에 올리지 않습니다.</p>
+      <p class="footer-note">연구·교육 목적. 의료적 진단을 대신하지 않습니다.</p>
+    </div>
+    <div class="footer-meta">
+      contact: <a href="https://github.com/kimhs950627/ecg-echo">github.com/kimhs950627/ecg-echo</a><br>
+      source dataset: EchoNext (Muhammad Fasseh, Kaggle)
+    </div>
+  </div>
+</footer>
+</body>
+</html>

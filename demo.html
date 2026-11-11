@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>데모 — 결과지 사진에서 심초음파 라벨 예측</title>
+<meta name="description" content="심전도 결과지 이미지를 넣으면 심초음파 12개 라벨 확률을 반환하는 웹 데모. 현재는 입력 화면만 배포된 상태.">
+<link rel="canonical" href="https://kimhs950627.github.io/ecg-echo/demo.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="데모 — 결과지 사진에서 심초음파 라벨 예측">
+<meta property="og:description" content="심전도 결과지 이미지를 넣으면 심초음파 12개 라벨 확률을 반환하는 웹 데모. 현재는 입력 화면만 배포된 상태.">
+<meta property="og:url" content="https://kimhs950627.github.io/ecg-echo/demo.html">
+<meta property="og:image" content="https://kimhs950627.github.io/ecg-echo/assets/samples/ecg_0000861.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#F4EDE3">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/site.css">
+
+</head>
+<body>
+<a class="skip-link" href="#main">본문으로 건너뛰기</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="index.html"><span class="dot" aria-hidden="true"></span>ECG<b>→</b>Echo<span class="full">&nbsp;Report</span></a>
+    <nav aria-label="주요 섹션"><ul class="tabs"><li><a href="index.html">표지</a></li>
+<li><a href="eda.html">EDA 리포트</a></li>
+<li><a href="demo.html" aria-current="page">데모</a></li>
+<li><a href="plan.html">학습 전략</a></li></ul></nav>
+  </div>
+</header>
+<main id="main">
+
+<section class="hero" style="padding-bottom:var(--space-5)">
+  <div class="wrap" style="grid-template-columns:1fr">
+    <div class="prose">
+      <p class="eyebrow">Tab 2 · Web demo</p>
+      <h1 style="font-size:var(--text-2xl)">결과지 사진을 넣으면 라벨이 나옵니다</h1>
+      <p class="lead">화면은 지금 열려 있지만, 모델은 아직 학습 전입니다. 이미지는 브라우저 밖으로 나가지 않습니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:var(--space-6)">
+  <div class="wrap">
+    <div class="demo-shell">
+      <div>
+        <div class="dropzone" id="dropzone">
+          <h2 style="font-size:var(--text-lg);margin-bottom:var(--space-2)">ECG 결과지 이미지</h2>
+          <p class="hint">PNG · JPG · 결과지 전체가 보이게. 끌어놓거나 아래 파일 선택.</p>
+          <label class="btn btn-primary" for="file">파일 선택
+            <input id="file" type="file" accept="image/*" hidden>
+          </label>
+          <div class="preview" id="preview" hidden></div>
+          <p class="status-note" id="status" style="margin-top:14px">모델 미배포 — 지금은 입력 화면만 동작합니다.</p>
+        </div>
+        <p class="status-note" style="margin-top:12px">샘플 결과지로 화면만 확인하려면:</p>
+        <div class="samples">
+          <button type="button" data-src="assets/samples/ecg_0000861.png" aria-label="샘플 결과지 1 보기"><img src="assets/samples/ecg_0000861.png" alt="샘플 결과지 1" width="1124" height="814" loading="lazy"></button>
+          <button type="button" data-src="assets/samples/ecg_0003650.png" aria-label="샘플 결과지 2 보기"><img src="assets/samples/ecg_0003650.png" alt="샘플 결과지 2" width="1124" height="814" loading="lazy"></button>
+          <button type="button" data-src="assets/samples/ecg_0004579.png" aria-label="샘플 결과지 3 보기"><img src="assets/samples/ecg_0004579.png" alt="샘플 결과지 3" width="1124" height="814" loading="lazy"></button>
+        </div>
+      </div>
+      <aside class="result-panel" aria-live="polite">
+        <h3>예측 결과</h3>
+        <p class="status-note" id="panel-note">이미지를 넣으면 12개 라벨 확률이 여기에 표시됩니다.
+        현재 배포본에는 가중치가 없어 확률을 만들지 않습니다 — 임의의 값을 보여주지 않는 것이 원칙입니다.</p>
+        <ul class="result-list" id="results">
+          <li><span>LVEF ≤ 45%</span><span class="mono">—</span><div class="track"><div class="fill" style="width:0%"></div></div></li>
+          <li><span>SHD composite</span><span class="mono">—</span><div class="track"><div class="fill" style="width:0%"></div></div></li>
+          <li><span>PASP ≥ 45 mmHg</span><span class="mono">—</span><div class="track"><div class="fill" style="width:0%"></div></div></li>
+          <li><span>MR ≥ moderate</span><span class="mono">—</span><div class="track"><div class="fill" style="width:0%"></div></div></li>
+        </ul>
+      </aside>
+    </div>
+
+    <hr class="rule">
+
+    <div class="grid-2">
+      <div class="prose">
+        <h3>배포 계획</h3>
+        <ol>
+          <li><b>가중치</b> — Kaggle 학습 후 ONNX 로 내보내고, 224×224 입력·12 sigmoid 출력으로 고정.</li>
+          <li><b>브라우저</b> — onnxruntime-web(WASM)으로 이미지 전처리·추론을 모두 클라이언트에서 수행.
+          사진은 서버로 보내지 않습니다(개인정보·비용 모두 회피).</li>
+          <li><b>PC 앱</b> — 같은 ONNX 를 데스크톱 런타임으로 감싼 로컬 앱.</li>
+          <li><b>APK</b> — 카메라 촬영 → 결과지 검출·원근 보정 → 동일 추론 파이프라인.</li>
+        </ol>
+        <p class="muted">성능이 확인되기 전까지 이 화면은 “입력 확인용”입니다. 확률을 지어내지 않습니다.</p>
+      </div>
+      <div class="prose">
+        <h3>사진에서 바로 추론하지 않는 이유</h3>
+        <p>학습 데이터는 정면·무왜곡 렌더입니다. 실제 휴대폰 사진은 기울기·조명·그림자가 다르므로,
+        그대로 넣으면 성능이 급락합니다. 그래서 두 단계를 나눕니다.</p>
+        <ul>
+          <li>문서 검출 + 원근 변환으로 결과지 영역을 정면화</li>
+          <li>회색조·대비 정규화 후 224×224 로 축소</li>
+          <li>학습 시에도 회전·원근·조명 증강을 넣어 이 간극을 미리 메움</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  var dz = document.getElementById('dropzone');
+  var input = document.getElementById('file');
+  var preview = document.getElementById('preview');
+  var status = document.getElementById('status');
+
+  function show(src, label) {
+    preview.hidden = false;
+    preview.innerHTML = '<img src="' + src + '" alt="선택한 심전도 결과지 미리보기" width="1124" height="814">';
+    status.textContent = label + ' · 모델 미배포라 확률은 표시하지 않습니다.';
+  }
+
+  document.querySelectorAll('.samples button').forEach(function (b) {
+    b.addEventListener('click', function () { show(b.dataset.src, '샘플 결과지'); });
+  });
+
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0];
+    if (!f) return;
+    var url = URL.createObjectURL(f);
+    show(url, f.name);
+  });
+
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('is-dragover'); });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove('is-dragover'); });
+  });
+  dz.addEventListener('drop', function (e) {
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    show(URL.createObjectURL(f), f.name);
+  });
+})();
+</script>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <p class="footer-note">EchoNext 공개 파형(100,000 ECG)을 GE MAC5K 결과지 레이아웃으로 렌더해 만든 연구용 이미지 데이터셋.
+      원본 파형과 환자 단위 metadata 는 공개 페이지에 올리지 않습니다.</p>
+      <p class="footer-note">연구·교육 목적. 의료적 진단을 대신하지 않습니다.</p>
+    </div>
+    <div class="footer-meta">
+      contact: <a href="https://github.com/kimhs950627/ecg-echo">github.com/kimhs950627/ecg-echo</a><br>
+      built 2026-11-11 · figures by <code>tools/make_eda.py</code><br>
+      source dataset: EchoNext (Muhammad Fasseh, Kaggle)
+    </div>
+  </div>
+</footer>
+</body>
+</html>
