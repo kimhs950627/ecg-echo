@@ -530,6 +530,58 @@ def results_block() -> str:
 """
 
 
+def ablation_block() -> str:
+    j = ROOT / "data" / "ablation.json"
+    if not j.exists():
+        return ""
+    d = json.loads(j.read_text())
+    rows = sorted(d["rows"], key=lambda r: r["d"])
+    trs = "".join(
+        f'<tr><td>{r["label"]}</td><td class="num">{r["a"]:.3f}</td>'
+        f'<td class="num">{r["b"]:.3f}</td><td class="num">{r["d"]:+.3f}</td></tr>'
+        for r in rows
+    )
+    a, b = d["macro"]["A_text"], d["macro"]["B_no_text"]
+    delta = b - a
+    return f"""
+    <hr class="rule">
+    <div class="section-head"><h2>판독문 누수 통제 실험</h2>
+      <span class="idx">{d['n_train']:,} train · {d['n_val']:,} val</span></div>
+    <p class="prose">같은 20,000행을 두 번 학습했습니다. 모델·스케줄·증강·손실은 동일하고, 한 쪽만
+    <code>--no-header --no-interpretation</code> 로 다시 렌더해 <b>인쇄 텍스트만</b> 제거했습니다.</p>
+    <div class="grid-2">
+      <div>
+        <table class="data">
+          <caption>라벨별 AUROC — A(텍스트 있음) vs B(텍스트 없음)</caption>
+          <thead><tr><th>라벨</th><th>A</th><th>B</th><th>Δ</th></tr></thead>
+          <tbody>{trs}
+            <tr><td><b>macro</b></td><td class="num"><b>{a:.3f}</b></td>
+                <td class="num"><b>{b:.3f}</b></td><td class="num"><b>{delta:+.3f}</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <p class="prose"><b>결론: 인쇄 텍스트의 기여는 작습니다.</b> macro AUROC 차이 {delta:+.3f}.
+        가장 크게 떨어진 라벨은 PR ≥ moderate(−0.067)와 LVEF(−0.037)이고, AR·AS 는 오히려 올랐습니다
+        (val 4,000장 기준이라 노이즈가 큽니다). 즉 이 데이터에서 성능의 대부분은 <b>파형</b>에서 나옵니다.</p>
+        <p class="prose">Grad-CAM 이 헤더에 몰렸던 것은 “글자를 읽는다”기보다, 헤더·측정값 블록이
+        결과지 상단에서 유일하게 고주파 디테일이 있는 영역이라 주의가 쏠린 것으로 해석하는 편이 맞습니다.
+        텍스트를 없앤 arm B 의 Grad-CAM 은 파형 중앙부로 이동했습니다.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <figure class="figure"><img src="assets/ablation_preview.png" alt="헤더·판독문 있는 렌더와 없는 렌더 비교"
+        width="496" height="756" decoding="async" style="max-width:100%">
+        <figcaption>같은 행을 두 방식으로 렌더한 비교. arm B 는 헤더·판독문이 없어 격자가 페이지 전체로 확장됩니다.</figcaption>
+      </figure>
+      <figure class="figure"><img src="assets/ablation_gradcam.png" alt="텍스트 제거 모델의 Grad-CAM"
+        width="699" height="1427" decoding="async" style="max-width:100%">
+        <figcaption>텍스트를 뺀 모델의 Grad-CAM. 화면 중앙의 파형 영역으로 주의가 이동했습니다.</figcaption>
+      </figure>
+    </div>
+"""
+
+
 # --------------------------------------------------------------------------- demo
 def build_demo() -> str:
     body = """
@@ -577,6 +629,7 @@ def build_demo() -> str:
     </div>
 
     %%RESULTS%%
+    %%ABLATION%%
 
     <div class="grid-2">
       <div class="prose">
@@ -642,7 +695,7 @@ def build_demo() -> str:
 })();
 </script>
 """
-    body = body.replace("%%RESULTS%%", results_block())
+    body = body.replace("%%RESULTS%%", results_block()).replace("%%ABLATION%%", ablation_block())
     return shell(
         "데모 — 결과지 사진에서 심초음파 라벨 예측",
         "심전도 결과지 이미지를 넣으면 심초음파 12개 라벨 확률을 반환하는 웹 데모. 현재는 입력 화면만 배포된 상태.",

@@ -105,6 +105,43 @@
     </div>
     <figure class="figure"><img src="assets/explainers.png" alt="EfficientNetB0 Grad-CAM 과 ViT attention rollout 비교" width="1131" height="1546"></figure>
 
+    
+    <hr class="rule">
+    <div class="section-head"><h2>판독문 누수 통제 실험</h2>
+      <span class="idx">16,000 train · 4,000 val</span></div>
+    <p class="prose">같은 20,000행을 두 번 학습했습니다. 모델·스케줄·증강·손실은 동일하고, 한 쪽만
+    <code>--no-header --no-interpretation</code> 로 다시 렌더해 <b>인쇄 텍스트만</b> 제거했습니다.</p>
+    <div class="grid-2">
+      <div>
+        <table class="data">
+          <caption>라벨별 AUROC — A(텍스트 있음) vs B(텍스트 없음)</caption>
+          <thead><tr><th>라벨</th><th>A</th><th>B</th><th>Δ</th></tr></thead>
+          <tbody><tr><td>PR ≥ moderate</td><td class="num">0.757</td><td class="num">0.690</td><td class="num">-0.067</td></tr><tr><td>MR ≥ moderate</td><td class="num">0.783</td><td class="num">0.745</td><td class="num">-0.037</td></tr><tr><td>LVEF ≤ 45%</td><td class="num">0.801</td><td class="num">0.764</td><td class="num">-0.037</td></tr><tr><td>SHD composite</td><td class="num">0.784</td><td class="num">0.755</td><td class="num">-0.029</td></tr><tr><td>LVWT ≥ 13 mm</td><td class="num">0.718</td><td class="num">0.690</td><td class="num">-0.028</td></tr><tr><td>RV dysfunction ≥ mod</td><td class="num">0.804</td><td class="num">0.783</td><td class="num">-0.022</td></tr><tr><td>TR ≥ moderate</td><td class="num">0.744</td><td class="num">0.723</td><td class="num">-0.020</td></tr><tr><td>PASP ≥ 45 mmHg</td><td class="num">0.689</td><td class="num">0.678</td><td class="num">-0.010</td></tr><tr><td>Pericardial effusion</td><td class="num">0.735</td><td class="num">0.727</td><td class="num">-0.008</td></tr><tr><td>TR max ≥ 3.2 m/s</td><td class="num">0.673</td><td class="num">0.678</td><td class="num">+0.005</td></tr><tr><td>AS ≥ moderate</td><td class="num">0.654</td><td class="num">0.669</td><td class="num">+0.015</td></tr><tr><td>AR ≥ moderate</td><td class="num">0.514</td><td class="num">0.597</td><td class="num">+0.083</td></tr>
+            <tr><td><b>macro</b></td><td class="num"><b>0.721</b></td>
+                <td class="num"><b>0.708</b></td><td class="num"><b>-0.013</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <p class="prose"><b>결론: 인쇄 텍스트의 기여는 작습니다.</b> macro AUROC 차이 -0.013.
+        가장 크게 떨어진 라벨은 PR ≥ moderate(−0.067)와 LVEF(−0.037)이고, AR·AS 는 오히려 올랐습니다
+        (val 4,000장 기준이라 노이즈가 큽니다). 즉 이 데이터에서 성능의 대부분은 <b>파형</b>에서 나옵니다.</p>
+        <p class="prose">Grad-CAM 이 헤더에 몰렸던 것은 “글자를 읽는다”기보다, 헤더·측정값 블록이
+        결과지 상단에서 유일하게 고주파 디테일이 있는 영역이라 주의가 쏠린 것으로 해석하는 편이 맞습니다.
+        텍스트를 없앤 arm B 의 Grad-CAM 은 파형 중앙부로 이동했습니다.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <figure class="figure"><img src="assets/ablation_preview.png" alt="헤더·판독문 있는 렌더와 없는 렌더 비교"
+        width="496" height="756" decoding="async" style="max-width:100%">
+        <figcaption>같은 행을 두 방식으로 렌더한 비교. arm B 는 헤더·판독문이 없어 격자가 페이지 전체로 확장됩니다.</figcaption>
+      </figure>
+      <figure class="figure"><img src="assets/ablation_gradcam.png" alt="텍스트 제거 모델의 Grad-CAM"
+        width="699" height="1427" decoding="async" style="max-width:100%">
+        <figcaption>텍스트를 뺀 모델의 Grad-CAM. 화면 중앙의 파형 영역으로 주의가 이동했습니다.</figcaption>
+      </figure>
+    </div>
+
 
     <div class="grid-2">
       <div class="prose">
@@ -180,7 +217,7 @@
     </div>
     <div class="footer-meta">
       contact: <a href="https://github.com/kimhs950627/ecg-echo">github.com/kimhs950627/ecg-echo</a><br>
-      built 2026-11-11 · figures by <code>tools/make_eda.py</code><br>
+      built 2026-11-12 · figures by <code>tools/make_eda.py</code><br>
       source dataset: EchoNext (Muhammad Fasseh, Kaggle)
     </div>
   </div>
