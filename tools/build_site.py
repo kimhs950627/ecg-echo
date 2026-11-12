@@ -638,6 +638,41 @@ def resolution_block() -> str:
 """
 
 
+def cam_overlay_block() -> str:
+    g = ROOT / "assets" / "cam_overlay_grid.webp"
+    if not g.exists():
+        return ""
+    w, h = Image.open(g).size
+    f = ROOT / "assets" / "cam_overlay_full.webp"
+    fw, fh = Image.open(f).size if f.exists() else (1124, 814)
+    return f"""
+    <hr class="rule">
+    <div class="section-head"><h2>원본 해상도 Grad-CAM overlay</h2><span class="idx">12×12 → 1124×814</span></div>
+    <p class="prose">feature map 은 12×12 입니다. 그대로 늘리면 계단이 생기므로 <b>bicubic 업샘플 + Gaussian 평활</b>로
+    원본 결과지 해상도까지 올린 뒤 얹었습니다. 위치 정밀도는 격자 한 칸(≈ 원본 94 px)이므로 픽셀 단위가 아니라
+    “어느 영역을 보는가”의 지도로 읽어야 합니다.</p>
+    <figure class="figure"><img src="assets/cam_overlay_grid.webp" alt="원본 결과지 위에 겹친 Grad-CAM 6장"
+      width="{w}" height="{h}" decoding="async" style="max-width:100%">
+      <figcaption>위 세 장이 LVEF ≤ 45% 양성(p=0.49 / 0.98 / 0.98), 아래 세 장이 음성(p=0.10 / 0.27 / 0.52).</figcaption>
+    </figure>
+    <div class="grid-2">
+      <figure class="figure"><img src="assets/cam_overlay_full.webp" alt="원본 해상도 Grad-CAM overlay 단일 예시"
+        width="{fw}" height="{fh}" decoding="async" style="max-width:100%">
+        <figcaption>원본 해상도 그대로. QRS·T 파형 구간에 열점이 걸립니다.</figcaption>
+      </figure>
+      <div class="prose">
+        <p><b>읽히는 것</b>: 열점이 상단 헤더가 아니라 <b>파형 구간</b>(주로 V1–V3 행과 리듬 스트립)에 걸립니다.
+        판독문 제거 ablation(Δ −0.013)과 같은 방향의 증거입니다.</p>
+        <p><b>주의할 것</b>: 여섯 장 모두 <b>오른쪽 위 모서리에 같은 열점</b>이 남습니다. 특정 환자의 특징이 아니라
+        경계·여백에서 나오는 아티팩트로 보이므로, Grad-CAM 을 임상 해석에 쓰려면 이 성분을 먼저 제거해야 합니다.
+        (헤더 마스킹 + 사진 증강으로 재학습한 가중치에서 이 열점이 줄어드는지가 다음 확인 항목입니다.)</p>
+        <p class="muted">한계: CAM 은 12×12 격자라 “파형 전체 vs 헤더” 수준의 판단만 가능합니다.
+        더 정밀한 설명이 필요하면 768 입력 재학습이나 입력 해상도에서 직접 계산하는 occlusion·Score-CAM 이 필요합니다.</p>
+      </div>
+    </div>
+"""
+
+
 # --------------------------------------------------------------------------- demo
 def build_demo() -> str:
     body = """
@@ -687,6 +722,7 @@ def build_demo() -> str:
     %%RESULTS%%
     %%ABLATION%%
     %%RESOLUTION%%
+    %%CAM%%
 
     <div class="grid-2">
       <div class="prose">
@@ -752,7 +788,7 @@ def build_demo() -> str:
 })();
 </script>
 """
-    body = body.replace("%%RESULTS%%", results_block()).replace("%%ABLATION%%", ablation_block()).replace("%%RESOLUTION%%", resolution_block())
+    body = body.replace("%%RESULTS%%", results_block()).replace("%%ABLATION%%", ablation_block()).replace("%%RESOLUTION%%", resolution_block()).replace("%%CAM%%", cam_overlay_block())
     return shell(
         "데모 — 결과지 사진에서 심초음파 라벨 예측",
         "심전도 결과지 이미지를 넣으면 심초음파 12개 라벨 확률을 반환하는 웹 데모. 현재는 입력 화면만 배포된 상태.",
