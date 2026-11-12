@@ -80,8 +80,10 @@
             <span class="mono" id="timing"></span>
           </div>
           <canvas id="cam" width="384" height="384" aria-label="선택한 라벨의 CAM 설명 지도"></canvas>
-          <p class="status-note" style="margin-top:8px">CAM 은 12×12 격자를 bilinear 로 늘린 지도입니다.
-          격자 한 칸이 원본 약 94 px 이므로 위치 정밀도는 영역 수준입니다.</p>
+          <p class="status-note" style="margin-top:8px">CAM 은 12×12 격자를 bilinear 로 늘린 지도이고,
+          검증 240장의 <b>평균 CAM 을 뺀</b> 값입니다. 이 모델은 지도 원본에서 빈 종이 모서리가 늘 최대로 튀어
+          (검증의 93–98% 가 argmax 를 그 모서리에 둠) 그대로 두면 모든 설명이 같은 그림이 됩니다.
+          한 칸이 원본 약 94 px 이라 정밀도는 영역 수준입니다.</p>
         </div>
       </aside>
     </div>
@@ -287,6 +289,7 @@
   var camCanvas = document.getElementById('cam');
 
   var sess = null, currentImg = null, lastCam = null, lastLogits = null, curClass = 0, curTruth = '';
+  var meanCam = null;   // 검증 240장 평균 CAM (12x12x12) — 빈 모서리의 상수 오프셋을 뺀다
 
   function setStatus(t) { status.textContent = t; }
 
@@ -296,6 +299,10 @@
            '<span class="cutoff" title="0.50 기준"></span></div></li>';
   }).join('');
   camSel.innerHTML = LABELS.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
+
+  fetch('data/mean_cam.json').then(function (r) { return r.json(); })
+    .then(function (d) { meanCam = d.mean_cam; })
+    .catch(function () { meanCam = null; });
 
   function ensureOrt() {
     if (window.ort) return Promise.resolve();
@@ -364,6 +371,7 @@
     for (var y = 0; y < N; y++) {
       for (var x = 0; x < N; x++) {
         var v = lastCam[((y * N) + x) * N + curClass];
+        if (meanCam) v -= meanCam[y][x][curClass];   // 상수 성분 제거
         if (v < 0) v = 0;
         grid[y * N + x] = v;
         if (v > mx) mx = v;
