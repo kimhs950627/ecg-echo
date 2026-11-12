@@ -681,7 +681,7 @@ def build_demo() -> str:
     <div class="prose">
       <p class="eyebrow">Tab 2 · Web demo</p>
       <h1 style="font-size:var(--text-2xl)">결과지 사진을 넣으면 라벨이 나옵니다</h1>
-      <p class="lead">화면은 지금 열려 있지만, 모델은 아직 학습 전입니다. 이미지는 브라우저 밖으로 나가지 않습니다.</p>
+      <p class="lead">EfficientNetB0(384) ONNX 가중치가 브라우저 안에서 직접 돌아갑니다. 사진은 서버로 전송되지 않습니다.</p>
     </div>
   </div>
 </section>
@@ -692,31 +692,46 @@ def build_demo() -> str:
       <div>
         <div class="dropzone" id="dropzone">
           <h2 style="font-size:var(--text-lg);margin-bottom:var(--space-2)">ECG 결과지 이미지</h2>
-          <p class="hint">PNG · JPG · 결과지 전체가 보이게. 끌어놓거나 아래 파일 선택.</p>
+          <p class="hint">PNG · JPG · 결과지 전체가 보이게. 끌어놓거나 아래 파일 선택. 모든 계산은 이 브라우저 안에서 끝납니다.</p>
           <label class="btn btn-primary" for="file">파일 선택
             <input id="file" type="file" accept="image/*" hidden>
           </label>
           <div class="preview" id="preview" hidden></div>
-          <p class="status-note" id="status" style="margin-top:14px">모델 미배포 — 지금은 입력 화면만 동작합니다.</p>
+          <p class="status-note" id="status" style="margin-top:14px">모델 준비 중…</p>
         </div>
-        <p class="status-note" style="margin-top:12px">샘플 결과지로 화면만 확인하려면:</p>
+        <p class="status-note" style="margin-top:12px">샘플 결과지로 바로 확인:</p>
         <div class="samples">
-          <button type="button" data-src="assets/samples/ecg_0000861.png" aria-label="샘플 결과지 1 보기"><img src="assets/samples/ecg_0000861.png" alt="샘플 결과지 1" width="1124" height="814" loading="lazy"></button>
-          <button type="button" data-src="assets/samples/ecg_0003650.png" aria-label="샘플 결과지 2 보기"><img src="assets/samples/ecg_0003650.png" alt="샘플 결과지 2" width="1124" height="814" loading="lazy"></button>
-          <button type="button" data-src="assets/samples/ecg_0004579.png" aria-label="샘플 결과지 3 보기"><img src="assets/samples/ecg_0004579.png" alt="샘플 결과지 3" width="1124" height="814" loading="lazy"></button>
+          <button type="button" data-src="assets/samples/ecg_0000038.png" data-tr="정답 LVEF ≤ 45% 있음" aria-label="샘플 결과지 1 (LVEF 감소) 보기"><img src="assets/samples/ecg_0000038.png" alt="샘플 결과지 1" width="1124" height="814" loading="lazy"></button>
+          <button type="button" data-src="assets/samples/ecg_0000039.png" data-tr="정답 LVEF ≤ 45% 있음" aria-label="샘플 결과지 2 (LVEF 감소) 보기"><img src="assets/samples/ecg_0000039.png" alt="샘플 결과지 2" width="1124" height="814" loading="lazy"></button>
+          <button type="button" data-src="assets/samples/ecg_0000032.png" data-tr="정답 LVEF ≤ 45% 없음" aria-label="샘플 결과지 3 (LVEF 정상) 보기"><img src="assets/samples/ecg_0000032.png" alt="샘플 결과지 3" width="1124" height="814" loading="lazy"></button>
         </div>
+        <p class="status-note" style="margin-top:8px">세 장 모두 학습에서 한 번도 쓰지 않은 환자(그룹 val)입니다. 정답을 함께 표시하니 맞고 틀림을 그대로 보실 수 있습니다.</p>
       </div>
       <aside class="result-panel" aria-live="polite">
-        <h3>예측 결과</h3>
-        <p class="status-note" id="panel-note">이미지를 넣으면 12개 라벨 확률이 여기에 표시됩니다.
-        현재 배포본에는 가중치가 없어 확률을 만들지 않습니다 — 임의의 값을 보여주지 않는 것이 원칙입니다.</p>
-        <ul class="result-list" id="results">
-          <li><span>LVEF ≤ 45%</span><span class="mono">—</span><div class="track"><div class="fill" style="width:0%"></div></div></li>
-          <li><span>SHD composite</span><span class="mono">—</span><div class="track"><div class="fill" style="width:0%"></div></div></li>
-          <li><span>PASP ≥ 45 mmHg</span><span class="mono">—</span><div class="track"><div class="fill" style="width:0%"></div></div></li>
-          <li><span>MR ≥ moderate</span><span class="mono">—</span><div class="track"><div class="fill" style="width:0%"></div></div></li>
-        </ul>
+        <h3>예측 확률</h3>
+        <p class="status-note" id="panel-note">이미지를 넣으면 12개 라벨 확률이 표시됩니다. 값은 보정 전 sigmoid 출력입니다.</p>
+        <ul class="result-list" id="results"></ul>
+        <div class="cam-figure">
+          <div class="cam-controls">
+            <label for="cam-class">설명 지도</label>
+            <select id="cam-class"></select>
+            <label class="cam-check"><input type="checkbox" id="cam-toggle" checked> overlay</label>
+            <span class="mono" id="timing"></span>
+          </div>
+          <canvas id="cam" width="384" height="384" aria-label="선택한 라벨의 CAM 설명 지도"></canvas>
+          <p class="status-note" style="margin-top:8px">CAM 은 12×12 격자를 bilinear 로 늘린 지도입니다.
+          격자 한 칸이 원본 약 94 px 이므로 위치 정밀도는 영역 수준입니다.</p>
+        </div>
       </aside>
+    </div>
+
+    <div class="callout" style="margin-top:var(--space-6)">
+      <h3>모델 카드 (배포본)</h3>
+      <p>EfficientNetB0 · 입력 384×384 · 출력 <code>logits</code>(12) + <code>cam</code>(12×12×12) · ONNX 8.0 MB ·
+      환자 단위 그룹 split(seed 42) · 학습 57,337장 · 그룹 val macro AUROC <b>0.768</b> (LVEF 0.835 / test 0.853).</p>
+      <p>내보내기 검증: 원본 Keras 와 ONNX 의 로짓 최대차 <b>0.036</b>, 160장 표본 macro AUROC
+      <b>Keras 0.8043 vs ONNX 0.8039</b>. int8 동적 양자화는 AUROC 가 0.63 → 0.52 로 무너져 폐기했습니다.
+      확률은 보정 전 sigmoid 이므로 임상 판단에 쓰지 않습니다.</p>
     </div>
 
     %%RESULTS%%
@@ -728,7 +743,8 @@ def build_demo() -> str:
       <div class="prose">
         <h3>배포 계획</h3>
         <ol>
-          <li><b>가중치</b> — Kaggle 학습 후 ONNX 로 내보내고, 224×224 입력·12 sigmoid 출력으로 고정.</li>
+          <li><b>가중치</b> — EfficientNetB0(384)를 ONNX 로 내보내 <code>logits</code>(12) + <code>cam</code>(12×12×12) 두 출력으로 고정.
+          fp32 16 MB 단일 파일입니다(int8 4 MB 는 AUROC 가 0.63 → 0.54 로 무너져 폐기).</li>
           <li><b>브라우저</b> — onnxruntime-web(WASM)으로 이미지 전처리·추론을 모두 클라이언트에서 수행.
           사진은 서버로 보내지 않습니다(개인정보·비용 모두 회피).</li>
           <li><b>PC 앱</b> — 같은 ONNX 를 데스크톱 런타임으로 감싼 로컬 앱.</li>
@@ -752,26 +768,205 @@ def build_demo() -> str:
 
 <script>
 (function () {
+  var IMG = 384, N = 12;
+  var CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.0/dist/';
+  var MODELS = ['assets/models/echonext_384.onnx'];
+  var LABELS = ['LVEF ≤ 45%', 'LVWT ≥ 13 mm', 'AS ≥ moderate', 'AR ≥ moderate',
+                'MR ≥ moderate', 'TR ≥ moderate', 'PR ≥ moderate', 'RV dysfunction ≥ mod',
+                'Pericardial effusion', 'PASP ≥ 45 mmHg', 'TR max ≥ 3.2 m/s', 'SHD composite'];
+
   var dz = document.getElementById('dropzone');
   var input = document.getElementById('file');
   var preview = document.getElementById('preview');
   var status = document.getElementById('status');
+  var panelNote = document.getElementById('panel-note');
+  var resultsEl = document.getElementById('results');
+  var camSel = document.getElementById('cam-class');
+  var camToggle = document.getElementById('cam-toggle');
+  var timingEl = document.getElementById('timing');
+  var camCanvas = document.getElementById('cam');
 
-  function show(src, label) {
+  var sess = null, currentImg = null, lastCam = null, lastLogits = null, curClass = 0, curTruth = '';
+
+  function setStatus(t) { status.textContent = t; }
+
+  resultsEl.innerHTML = LABELS.map(function (name, i) {
+    return '<li data-i="' + i + '"><span>' + name + '</span><span class="mono">—</span>' +
+           '<div class="track"><div class="fill" style="width:0%"></div></div></li>';
+  }).join('');
+  camSel.innerHTML = LABELS.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
+
+  function ensureOrt() {
+    if (window.ort) return Promise.resolve();
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = CDN + 'ort.min.js';
+      s.onload = res;
+      s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function loadModel() {
+    try {
+      await ensureOrt();
+      ort.env.wasm.wasmPaths = CDN;
+      ort.env.wasm.numThreads = 1;
+    } catch (e) {
+      setStatus('onnxruntime 로드 실패 — 네트워크(CDN)를 확인하세요.');
+      return;
+    }
+    for (var i = 0; i < MODELS.length; i++) {
+      try {
+        setStatus('가중치 로드 중… (16 MB, 첫 1회만 내려받습니다)');
+        sess = await ort.InferenceSession.create(MODELS[i], { executionProviders: ['wasm'] });
+        setStatus('준비 완료 — 결과지 이미지를 넣으세요.');
+        if (currentImg) infer();
+        return;
+      } catch (e) { console.warn('model load failed', MODELS[i], e); }
+    }
+    setStatus('가중치를 불러오지 못했습니다 (모델 파일 미배포 또는 로드 실패).');
+  }
+
+  function imgToFloat(img) {
+    var c = document.createElement('canvas');
+    c.width = IMG; c.height = IMG;
+    var x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(img, 0, 0, IMG, IMG);
+    var d = x.getImageData(0, 0, IMG, IMG).data;
+    var f = new Float32Array(IMG * IMG * 3);
+    for (var i = 0, p = 0; i < d.length; i += 4) {
+      f[p++] = d[i]; f[p++] = d[i + 1]; f[p++] = d[i + 2];
+    }
+    return { data: f, canvas: c };
+  }
+
+  function sigmoid(v) { return 1 / (1 + Math.exp(-v)); }
+
+  function jet(t) {
+    t = Math.max(0, Math.min(1, t));
+    var r = Math.round(255 * Math.min(Math.max(1.5 - Math.abs(4 * t - 3), 0), 1));
+    var g = Math.round(255 * Math.min(Math.max(1.5 - Math.abs(4 * t - 2), 0), 1));
+    var b = Math.round(255 * Math.min(Math.max(1.5 - Math.abs(4 * t - 1), 0), 1));
+    return [r, g, b];
+  }
+
+  function drawCam() {
+    if (!currentImg) return;
+    var base = imgToFloat(currentImg).canvas;
+    var ctx = camCanvas.getContext('2d');
+    ctx.clearRect(0, 0, IMG, IMG);
+    ctx.drawImage(base, 0, 0);
+    if (!lastCam || !camToggle.checked) return;
+
+    var grid = new Float32Array(N * N), mx = 0;
+    for (var y = 0; y < N; y++) {
+      for (var x = 0; x < N; x++) {
+        var v = lastCam[((y * N) + x) * N + curClass];
+        if (v < 0) v = 0;
+        grid[y * N + x] = v;
+        if (v > mx) mx = v;
+      }
+    }
+    if (mx <= 0) return;
+    for (var k = 0; k < grid.length; k++) grid[k] /= mx;
+
+    var small = document.createElement('canvas');
+    small.width = N; small.height = N;
+    var sctx = small.getContext('2d');
+    var idata = sctx.createImageData(N, N);
+    for (var i = 0; i < grid.length; i++) {
+      var g = Math.round(grid[i] * 255);
+      idata.data[i * 4] = g; idata.data[i * 4 + 1] = g; idata.data[i * 4 + 2] = g; idata.data[i * 4 + 3] = 255;
+    }
+    sctx.putImageData(idata, 0, 0);
+
+    var up = document.createElement('canvas');
+    up.width = IMG; up.height = IMG;
+    var uctx = up.getContext('2d', { willReadFrequently: true });
+    uctx.imageSmoothingEnabled = true;
+    uctx.imageSmoothingQuality = 'high';
+    uctx.drawImage(small, 0, 0, IMG, IMG);
+    var upData = uctx.getImageData(0, 0, IMG, IMG).data;
+
+    var out = ctx.getImageData(0, 0, IMG, IMG);
+    var od = out.data;
+    for (var p = 0, q = 0; p < od.length; p += 4, q += 4) {
+      var t = upData[q] / 255;
+      if (t <= 0.02) continue;
+      var a = 0.55 * t;
+      var col = jet(t);
+      od[p] = od[p] * (1 - a) + col[0] * a;
+      od[p + 1] = od[p + 1] * (1 - a) + col[1] * a;
+      od[p + 2] = od[p + 2] * (1 - a) + col[2] * a;
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+
+  function renderResults(logits, cam, ms) {
+    lastCam = cam;
+    lastLogits = logits;
+    var items = Array.prototype.slice.call(resultsEl.children);
+    var best = 0;
+    var probs = Array.prototype.map.call(logits, sigmoid);
+    probs.forEach(function (p, i) { if (p > probs[best]) best = i; });
+    items.forEach(function (li, i) {
+      var p = probs[i];
+      li.querySelector('.mono').textContent = (p * 100).toFixed(1) + '%';
+      var fill = li.querySelector('.fill');
+      fill.style.width = Math.max(1, p * 100).toFixed(1) + '%';
+      li.classList.toggle('is-top', i === best);
+    });
+    timingEl.textContent = ms.toFixed(0) + ' ms';
+    panelNote.textContent = (curTruth ? curTruth + ' · ' : '') +
+      'LVEF ≤ 45% 예측 ' + Math.round(probs[0] * 100) + '% · 최고 라벨 ' + LABELS[best] +
+      ' — 보정 전 확률이라 임계값 판단에는 쓰지 않습니다.';
+    if (curClass !== best && !camSel.dataset.touched) {
+      curClass = best;
+      camSel.value = String(best);
+    }
+    drawCam();
+  }
+
+  async function infer() {
+    if (!currentImg) return;
+    if (!sess) { setStatus('가중치 로드 중입니다. 잠시 후 자동으로 추론합니다.'); return; }
+    setStatus('추론 중…');
+    try {
+      var t0 = performance.now();
+      var t = imgToFloat(currentImg);
+      var tensor = new ort.Tensor('float32', t.data, [1, IMG, IMG, 3]);
+      var out = await sess.run({ image: tensor });
+      var keys = Object.keys(out);
+      var logits = (out.logits || out.logits_out || out[keys[0]]).data;
+      var cam = (out.cam || out[keys[1]]).data;   // (h, w, class) 평탄화
+      renderResults(logits, cam, performance.now() - t0);
+      setStatus('완료 — 결과지는 이 기기를 떠나지 않았습니다.');
+    } catch (e) {
+      console.error(e);
+      setStatus('추론 실패: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  function show(src, label, isObjectUrl, truth) {
+    curTruth = truth || '';
     preview.hidden = false;
-    preview.innerHTML = '<img src="' + src + '" alt="선택한 심전도 결과지 미리보기" width="1124" height="814">';
-    status.textContent = label + ' · 모델 미배포라 확률은 표시하지 않습니다.';
+    preview.innerHTML = '<img alt="선택한 심전도 결과지 미리보기">';
+    var img = preview.querySelector('img');
+    img.onload = function () { currentImg = img; infer(); };
+    img.src = src;
+    setStatus(label + ' — 준비 중…');
+    if (isObjectUrl) setTimeout(function () { URL.revokeObjectURL(src); }, 20000);
   }
 
   document.querySelectorAll('.samples button').forEach(function (b) {
-    b.addEventListener('click', function () { show(b.dataset.src, '샘플 결과지'); });
+    b.addEventListener('click', function () { show(b.dataset.src, '샘플 결과지', false, b.dataset.tr); });
   });
 
   input.addEventListener('change', function () {
     var f = input.files && input.files[0];
     if (!f) return;
-    var url = URL.createObjectURL(f);
-    show(url, f.name);
+    show(URL.createObjectURL(f), f.name, true);
   });
 
   ['dragenter', 'dragover'].forEach(function (ev) {
@@ -783,8 +978,25 @@ def build_demo() -> str:
   dz.addEventListener('drop', function (e) {
     var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
     if (!f) return;
-    show(URL.createObjectURL(f), f.name);
+    show(URL.createObjectURL(f), f.name, true);
   });
+
+  resultsEl.addEventListener('click', function (e) {
+    var li = e.target.closest('li[data-i]');
+    if (!li) return;
+    curClass = Number(li.dataset.i);
+    camSel.dataset.touched = '1';
+    camSel.value = String(curClass);
+    drawCam();
+  });
+  camSel.addEventListener('change', function () {
+    curClass = Number(camSel.value);
+    camSel.dataset.touched = '1';
+    drawCam();
+  });
+  camToggle.addEventListener('change', drawCam);
+
+  loadModel();
 })();
 </script>
 """

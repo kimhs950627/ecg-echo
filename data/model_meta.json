@@ -1,0 +1,57 @@
+{
+ "model": "EfficientNetB0 384 · group split seed 42 · 6 epoch",
+ "input": {
+  "name": "image",
+  "shape": [
+   "batch",
+   384,
+   384,
+   3
+  ],
+  "dtype": "float32",
+  "preprocess": "RGB, stretch resize 384x384, 0-255 (no /255)"
+ },
+ "outputs": {
+  "logits": [
+   1,
+   12
+  ],
+  "cam": [
+   1,
+   12,
+   12,
+   12
+  ]
+ },
+ "cam_note": "cam[0][y][x][c] = sum_k feat[y,x,k]*W[k,c]  (relu + normalize per class)",
+ "file": {
+  "name": "echonext_384.onnx",
+  "mb": 8.0
+ },
+ "sanity": {
+  "original_vs_onnx_max_abs_logit_diff": 0.0362,
+  "macro_auroc_160_val": {
+   "keras": 0.8043,
+   "onnx": 0.8039
+  }
+ },
+ "int8": {
+  "status": "abandoned",
+  "reason": "dynamic int8 collapsed AUROC 0.63 -> 0.52 on 160 val images"
+ },
+ "labels": [
+  "lvef_lte_45_flag",
+  "lvwt_gte_13_flag",
+  "aortic_stenosis_moderate_or_greater_flag",
+  "aortic_regurgitation_moderate_or_greater_flag",
+  "mitral_regurgitation_moderate_or_greater_flag",
+  "tricuspid_regurgitation_moderate_or_greater_flag",
+  "pulmonary_regurgitation_moderate_or_greater_flag",
+  "rv_systolic_dysfunction_moderate_or_greater_flag",
+  "pericardial_effusion_moderate_large_flag",
+  "pasp_gte_45_flag",
+  "tr_max_gte_32_flag",
+  "shd_moderate_or_greater_flag"
+ ],
+ "note": "확률은 보정 전 sigmoid. 임상 판단에 쓰지 말 것."
+}
