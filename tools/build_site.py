@@ -582,6 +582,62 @@ def ablation_block() -> str:
 """
 
 
+def resolution_block() -> str:
+    j = ROOT / "data" / "resolution.json"
+    if not j.exists():
+        return ""
+    d = json.loads(j.read_text())
+    rows = sorted(d["rows"], key=lambda r: -r["d"])
+    trs = "".join(
+        f'<tr><td>{r["label"]}</td><td class="num">{r["v224"]:.3f}</td>'
+        f'<td class="num">{r["v384"]:.3f}</td><td class="num">{r["t384"]:.3f}</td>'
+        f'<td class="num">{r["d"]:+.3f}</td></tr>'
+        for r in rows
+    )
+    m24, m84 = d["macro_224"], d["macro_384"]
+    names = [("group_val", "그룹 val"), ("group_test", "그룹 test"),
+             ("old_val_seen", "기존 val · 본 환자"), ("old_val_unseen", "기존 val · 못 본 환자"),
+             ("no_split_external", "no_split 외부")]
+    mrows = "".join(
+        f'<tr><td>{label}</td><td class="num">{m24[k]:.3f}</td>'
+        f'<td class="num">{m84[k]:.3f}</td><td class="num">{m84[k]-m24[k]:+.3f}</td></tr>'
+        for k, label in names
+    )
+    return f"""
+    <hr class="rule">
+    <div class="section-head"><h2>해상도 실험 224 → 384</h2><span class="idx">같은 행 · 같은 스케줄</span></div>
+    <p class="prose">파형의 미세 진폭과 QRS 폭이 정보라면 해상도를 올릴 때 성능이 올라야 합니다.
+    같은 그룹 split·같은 6 epoch·같은 손실에서 <b>입력 크기만 384</b> 로 바꿨습니다.</p>
+    <div class="grid-2">
+      <div>
+        <table class="data">
+          <caption>macro AUROC — 224 vs 384</caption>
+          <thead><tr><th>평가 집합</th><th>224</th><th>384</th><th>Δ</th></tr></thead>
+          <tbody>{mrows}</tbody>
+        </table>
+      </div>
+      <div class="prose">
+        <p><b>해상도는 실제 레버였습니다.</b> 그룹 val macro {m24['group_val']:.3f} → <b>{m84['group_val']:.3f}</b>
+        ({m84['group_val']-m24['group_val']:+.3f}), 그룹 test {m24['group_test']:.3f} → <b>{m84['group_test']:.3f}</b>
+        ({m84['group_test']-m24['group_test']:+.3f}). 두 집합이 같이 올라 우연이 아닙니다.</p>
+        <p><b>LVEF ≤ 45% 는 그룹 test 0.853</b> — 전략 문서의 목표(0.85)를 넘었습니다(val 0.835).
+        SHD 도 0.806 으로 목표(0.80)를 넘겼습니다.</p>
+        <p>반면 <b>no_split 외부는 0.589 → 0.556</b> 으로 더 나빠졌습니다. 해상도로 설명되지 않는
+        분포 문제가 남아 있다는 뜻이고, 다음 과제는 모델이 아니라 이 부분집합의 정체 규명입니다.</p>
+      </div>
+    </div>
+    <div class="table-scroll">
+    <table class="data">
+      <caption>라벨별 AUROC — 224 그룹 val / 384 그룹 val / 384 그룹 test</caption>
+      <thead><tr><th>라벨</th><th>224 val</th><th>384 val</th><th>384 test</th><th>Δ val</th></tr></thead>
+      <tbody>{trs}</tbody>
+    </table>
+    </div>
+    <p class="prose muted">주의: 해상도를 올리면 배치를 128 → 64 로 줄여야 해서 학습 동역학이 완전히 같지는 않습니다.
+    ±0.01 수준 차이는 이 때문일 수 있습니다. 누수 지표(본 환자 − 못 본 환자)는 0.060 으로 224(0.086)보다 줄었습니다.</p>
+"""
+
+
 # --------------------------------------------------------------------------- demo
 def build_demo() -> str:
     body = """
@@ -630,6 +686,7 @@ def build_demo() -> str:
 
     %%RESULTS%%
     %%ABLATION%%
+    %%RESOLUTION%%
 
     <div class="grid-2">
       <div class="prose">
@@ -695,7 +752,7 @@ def build_demo() -> str:
 })();
 </script>
 """
-    body = body.replace("%%RESULTS%%", results_block()).replace("%%ABLATION%%", ablation_block())
+    body = body.replace("%%RESULTS%%", results_block()).replace("%%ABLATION%%", ablation_block()).replace("%%RESOLUTION%%", resolution_block())
     return shell(
         "데모 — 결과지 사진에서 심초음파 라벨 예측",
         "심전도 결과지 이미지를 넣으면 심초음파 12개 라벨 확률을 반환하는 웹 데모. 현재는 입력 화면만 배포된 상태.",
