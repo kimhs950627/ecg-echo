@@ -681,7 +681,8 @@ def build_demo() -> str:
     <div class="prose">
       <p class="eyebrow">Tab 2 · Web demo</p>
       <h1 style="font-size:var(--text-2xl)">결과지 사진을 넣으면 라벨이 나옵니다</h1>
-      <p class="lead">EfficientNetB0(384) ONNX 가중치가 브라우저 안에서 직접 돌아갑니다. 사진은 서버로 전송되지 않습니다.</p>
+      <p class="lead">심전도 결과지 사진에서 심초음파 주요 소견 12개의 가능성을 확률로 보여줍니다.
+      진단이 아니라 <b>심초음파 시행 여부를 판단하는 보조 지표</b>이고, 사진은 이 기기를 떠나지 않습니다.</p>
     </div>
   </div>
 </section>
@@ -709,8 +710,11 @@ def build_demo() -> str:
       </div>
       <aside class="result-panel" aria-live="polite">
         <h3>예측 확률</h3>
-        <p class="status-note" id="panel-note">이미지를 넣으면 12개 라벨 확률이 표시됩니다. 값은 보정 전 sigmoid 출력입니다.</p>
+        <p class="status-note" id="panel-note">이미지를 넣으면 12개 소견의 가능성이 표시됩니다.
+        0.50 을 넘는 항목이 “양성”으로 강조됩니다.</p>
         <ul class="result-list" id="results"></ul>
+        <p class="cutoff-legend">세로 눈금 = 0.50 · 넘으면 해당 소견 양성 표시(진한 막대 + 굵은 수치).
+        보정 전 확률이라 컷오프 자체는 검증되지 않았습니다.</p>
         <div class="cam-figure">
           <div class="cam-controls">
             <label for="cam-class">설명 지도</label>
@@ -725,44 +729,62 @@ def build_demo() -> str:
       </aside>
     </div>
 
-    <div class="callout" style="margin-top:var(--space-6)">
-      <h3>모델 카드 (배포본)</h3>
-      <p>EfficientNetB0 · 입력 384×384 · 출력 <code>logits</code>(12) + <code>cam</code>(12×12×12) · ONNX 8.0 MB ·
-      환자 단위 그룹 split(seed 42) · 학습 57,337장 · 그룹 val macro AUROC <b>0.768</b> (LVEF 0.835 / test 0.853).</p>
-      <p>내보내기 검증: 원본 Keras 와 ONNX 의 로짓 최대차 <b>0.036</b>, 160장 표본 macro AUROC
-      <b>Keras 0.8043 vs ONNX 0.8039</b>. int8 동적 양자화는 AUROC 가 0.63 → 0.52 로 무너져 폐기했습니다.
-      확률은 보정 전 sigmoid 이므로 임상 판단에 쓰지 않습니다.</p>
+    <hr class="rule">
+    <div class="grid-2">
+      <div class="prose">
+        <h2>임상 해석</h2>
+        <p>0.50 을 넘으면 해당 소견이 <b>있을 가능성이 높다고 표시</b>됩니다(점선 없이 채워진 막대 + 굵은 수치).
+        다만 이 확률은 <b>보정 전</b>이라 0.50 은 검증된 컷오프가 아닙니다. 값 자체보다 <b>상위 2–3개 라벨</b>과
+        좌우 대칭성을 보세요.</p>
+        <h3>라벨이 뜻하는 것</h3>
+        <ul>
+          <li><b>LVEF ≤ 45%</b> — 좌심실 수축기능 저하. 가장 중요한 단일 지표. 상승 시 심초음파 우선.</li>
+          <li><b>SHD composite</b> — 구조적 심질환 복합(판막·심실·폐고혈압 중 하나 이상 중등도 이상).</li>
+          <li><b>LVWT ≥ 13 mm</b> — 좌심실비대. 고혈압·대동맥판 협착의 만성 흔적.</li>
+          <li><b>AS / AR / MR / TR / PR ≥ moderate</b> — 각 판막 중등도 이상 역류·협착.</li>
+          <li><b>RV dysfunction ≥ moderate</b> — 우심실 기능저하.</li>
+          <li><b>PASP ≥ 45 mmHg · TR max ≥ 3.2 m/s</b> — 폐고혈압 시사(TR 제트에서 추정).</li>
+          <li><b>Pericardial effusion</b> — 중등도 이상 심낭삼출.</li>
+        </ul>
+        <h3>해석할 때 주의</h3>
+        <ul>
+          <li>조합이 임상적으로 더 중요합니다 — <b>LVEF↓ + SHD</b> 는 고위험, <b>PASP↑ + TR↑</b> 는 폐고혈압 평가,
+          삼출 단독 상승은 특이도가 낮습니다.</li>
+          <li>학습 데이터는 <b>정면 렌더된 결과지</b>입니다. 기울기·그림자·저해상도 촬영본에서는 성능이 떨어집니다.</li>
+          <li>무증상 선별 검사로 검증된 도구가 아닙니다. <b>최종 판단은 심초음파와 전문의 확인</b>으로 합니다.</li>
+          <li>설명 지도(CAM)는 12×12 격자라 “파형 전체 vs 상단 텍스트” 수준의 거친 위치 정보만 줍니다.</li>
+        </ul>
+      </div>
+      <div class="prose">
+        <h3>이 화면이 하는 일 / 하지 않는 일</h3>
+        <table class="data">
+          <tbody>
+            <tr><td>하는 일</td><td>결과지 사진 → 12개 소견 확률 + 거친 주의 지도</td></tr>
+            <tr><td>하지 않는 일</td><td>심초음파 대체, 진단 확정, 치료 결정</td></tr>
+            <tr><td>권장 사용</td><td>심전도만 있고 심초음파가 없을 때 <b>검사 우선순위</b> 정하기</td></tr>
+            <tr><td>금기</td><td>급성 흉통·폐부종 등 즉시 초음파가 필요한 상황의 대체</td></tr>
+          </tbody>
+        </table>
+        <p class="muted">결과지 1장당 추론은 이 기기에서 0.4–0.8초. 사진은 업로드되지 않고 브라우저 메모리에서만 처리됩니다.</p>
+      </div>
     </div>
+
+    <details class="fineprint">
+      <summary>기술 정보 — 모델 카드·검증 수치·배포 구조</summary>
+      <p>EfficientNetB0 · 입력 384×384 · 출력 <code>logits</code>(12) + <code>cam</code>(12×12×12) · ONNX 8.0 MB ·
+      환자 단위 그룹 split(seed 42) · 학습 57,337장 · 그룹 val macro AUROC 0.768 (LVEF 0.835 / test 0.853).</p>
+      <p>내보내기 검증: 원본 Keras 와 ONNX 로짓 최대차 0.036, 160장 표본 macro AUROC Keras 0.8043 vs ONNX 0.8039.
+      int8 동적 양자화는 AUROC 0.63 → 0.52 로 무너져 폐기. 확률은 보정 전 sigmoid 입니다.</p>
+      <p>배포: onnxruntime-web(WASM)으로 전처리·추론을 모두 클라이언트에서 수행 → PC 앱은 같은 ONNX 를 데스크톱 런타임으로,
+      APK 는 카메라 촬영 + 결과지 검출·원근 보정 후 동일 파이프라인. 사진에서 바로 추론하지 않는 이유는 학습 데이터가
+      정면·무왜곡 렌더이기 때문이며, 회전·원근·조명·그림자 증강과 헤더 마스킹으로 그 간극을 줄이는 중입니다.</p>
+    </details>
 
     %%RESULTS%%
     %%ABLATION%%
     %%RESOLUTION%%
     %%CAM%%
 
-    <div class="grid-2">
-      <div class="prose">
-        <h3>배포 계획</h3>
-        <ol>
-          <li><b>가중치</b> — EfficientNetB0(384)를 ONNX 로 내보내 <code>logits</code>(12) + <code>cam</code>(12×12×12) 두 출력으로 고정.
-          fp32 16 MB 단일 파일입니다(int8 4 MB 는 AUROC 가 0.63 → 0.54 로 무너져 폐기).</li>
-          <li><b>브라우저</b> — onnxruntime-web(WASM)으로 이미지 전처리·추론을 모두 클라이언트에서 수행.
-          사진은 서버로 보내지 않습니다(개인정보·비용 모두 회피).</li>
-          <li><b>PC 앱</b> — 같은 ONNX 를 데스크톱 런타임으로 감싼 로컬 앱.</li>
-          <li><b>APK</b> — 카메라 촬영 → 결과지 검출·원근 보정 → 동일 추론 파이프라인.</li>
-        </ol>
-        <p class="muted">성능이 확인되기 전까지 이 화면은 “입력 확인용”입니다. 확률을 지어내지 않습니다.</p>
-      </div>
-      <div class="prose">
-        <h3>사진에서 바로 추론하지 않는 이유</h3>
-        <p>학습 데이터는 정면·무왜곡 렌더입니다. 실제 휴대폰 사진은 기울기·조명·그림자가 다르므로,
-        그대로 넣으면 성능이 급락합니다. 그래서 두 단계를 나눕니다.</p>
-        <ul>
-          <li>문서 검출 + 원근 변환으로 결과지 영역을 정면화</li>
-          <li>회색조·대비 정규화 후 224×224 로 축소</li>
-          <li>학습 시에도 회전·원근·조명 증강을 넣어 이 간극을 미리 메움</li>
-        </ul>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -792,7 +814,8 @@ def build_demo() -> str:
 
   resultsEl.innerHTML = LABELS.map(function (name, i) {
     return '<li data-i="' + i + '"><span>' + name + '</span><span class="mono">—</span>' +
-           '<div class="track"><div class="fill" style="width:0%"></div></div></li>';
+           '<div class="track"><div class="fill" style="width:0%"></div>' +
+           '<span class="cutoff" title="0.50 기준"></span></div></li>';
   }).join('');
   camSel.innerHTML = LABELS.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
 
@@ -913,14 +936,17 @@ def build_demo() -> str:
     items.forEach(function (li, i) {
       var p = probs[i];
       li.querySelector('.mono').textContent = (p * 100).toFixed(1) + '%';
+      li.classList.toggle('is-positive', p >= 0.5);
+      li.querySelector('.mono').setAttribute('title', p >= 0.5 ? '0.50 이상' : '');
       var fill = li.querySelector('.fill');
       fill.style.width = Math.max(1, p * 100).toFixed(1) + '%';
       li.classList.toggle('is-top', i === best);
     });
     timingEl.textContent = ms.toFixed(0) + ' ms';
+    var pos = probs.filter(function (v) { return v >= 0.5; }).length;
     panelNote.textContent = (curTruth ? curTruth + ' · ' : '') +
-      'LVEF ≤ 45% 예측 ' + Math.round(probs[0] * 100) + '% · 최고 라벨 ' + LABELS[best] +
-      ' — 보정 전 확률이라 임계값 판단에는 쓰지 않습니다.';
+      '0.50 이상 ' + pos + '개 · 최고 ' + LABELS[best] + ' ' + Math.round(probs[best] * 100) + '%' +
+      ' — 보정 전 확률이라 컷오프 판단에는 쓰지 않습니다.';
     if (curClass !== best && !camSel.dataset.touched) {
       curClass = best;
       camSel.value = String(best);
