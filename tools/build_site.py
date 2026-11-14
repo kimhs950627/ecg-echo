@@ -601,6 +601,45 @@ SHORT_KO = {
 
 
 def threshold_table() -> str:
+    cj = ROOT / "data" / "calibration.json"
+    if cj.exists():
+        d = json.loads(cj.read_text())
+        rows = ""
+        for k in d["labels"]:
+            e = d["per_label"][k]
+            rows += (
+                f'<tr><td>{SHORT_KO.get(k, k)}</td>'
+                f'<td class="num">{e["auc"]:.3f}</td>'
+                f'<td class="num">{e["brier_raw"]:.3f}</td>'
+                f'<td class="num">{e["brier_cal"]:.3f}</td>'
+                f'<td class="num"><b>{e["thr_cal"]:.3f}</b></td>'
+                f'<td class="num">{e["sens_cal"]:.2f} / {e["spec_cal"]:.2f}</td></tr>'
+            )
+        fig = ""
+        img = ROOT / "assets" / "roc_val.png"
+        if img.exists():
+            fig = ('<figure><img src="assets/roc_val.png" alt="검증 ROC 곡선 12개 라벨, Youden 점 표시" '
+                   'width="1200" height="820" loading="lazy">'
+                   '<figcaption>validation group split(n={:,})의 라벨별 ROC. 점이 Youden 지점입니다.</figcaption></figure>').format(d["n_val"])
+        return f"""
+        <h3>확률 보정과 라벨별 컷오프</h3>
+        <p>모델의 sigmoid 출력은 양성 가중 학습 때문에 부풀려져 있습니다. validation 예측으로 <b>라벨별 isotonic 회귀</b>를
+        적합해 확률을 실제 빈도에 맞췄습니다(Brier score 가 절반 안팎으로 줄었습니다). 데모가 보여주는 숫자는
+        <b>보정된 확률</b>이고, 막대의 세로 눈금은 <b>보정 확률 위에서 다시 계산한 Youden 지점</b>입니다.</p>
+        <div class="table-scroll">
+        <table class="data">
+          <caption>보정(cross-fit: 절반에서 적합, 나머지 절반에서 평가)</caption>
+          <thead><tr><th>라벨</th><th>AUROC</th><th>Brier(전)</th><th>Brier(후)</th><th>컷오프</th><th>민감도/특이도</th></tr></thead>
+          <tbody>{rows}</tbody>
+        </table>
+        </div>
+        {fig}
+        <p class="muted">희귀 라벨(AR·PR·삼출)의 컷오프가 1–2% 로 보이는 것은 버그가 아닙니다 — 유병률이 1% 안팎이라
+        “양성 판단”에 해당하는 사후확률 자체가 낮습니다. 반대로 SHD(유병률 50%)는 컷오프가 0.55 로 높습니다.
+        Youden 은 민감도+특이도를 최대화하는 지점이라 PPV 를 최적화하지 않는다는 점도 같이 봐주세요.</p>
+        <p class="muted">출처: {d.get("source", "")} · 표본 {d["n_val"]:,}장.</p>
+"""
+
     j = ROOT / "data" / "thresholds.json"
     if not j.exists():
         return ""
@@ -621,14 +660,12 @@ def threshold_table() -> str:
         )
     return f"""
         <h3>라벨별 컷오프 (validation Youden)</h3>
+        <div class="table-scroll">
         <table class="data">
-          <caption>민감도+특이도를 최대로 하는 지점. 데모 막대의 세로 눈금이 이 값입니다.</caption>
           <thead><tr><th>라벨</th><th>유병률</th><th>AUROC</th><th>컷오프</th><th>민감도/특이도</th></tr></thead>
           <tbody>{rows}</tbody>
         </table>
-        <p class="muted">출처: {d.get("source", "")} · 표본 {d.get("n_val", 0):,}장.
-        희귀 라벨(AR·PR·삼출)의 컷오프가 0.05–0.24 로 낮은 것은, 0.50 일괄 기준이 그 소견들을 사실상 지웠다는 뜻입니다.
-        full validation 으로 재계산하면 이 표가 갱신됩니다.</p>
+        </div>
 """
 
 def augment_block() -> str:
@@ -819,8 +856,9 @@ def build_demo() -> str:
         <p class="status-note" id="panel-note">이미지를 넣으면 12개 소견의 가능성이 표시됩니다.
         0.50 을 넘는 항목이 “양성”으로 강조됩니다.</p>
         <ul class="result-list" id="results"></ul>
-        <p class="cutoff-legend">세로 눈금 = <b>라벨별 컷오프</b>(validation Youden 지점), 라벨 옆 흐린 숫자가 그 값입니다.
-        넘으면 양성 표시(진한 막대 + 굵은 수치). 확률은 보정 전이므로 순위 비교용으로 보세요.</p>
+        <p class="cutoff-legend">표시되는 확률은 validation isotonic 보정을 거친 값입니다.
+        세로 눈금 = <b>라벨별 컷오프</b>(보정 확률 위의 Youden 지점), 라벨 옆 흐린 숫자가 그 값입니다.
+        넘으면 양성 표시(진한 막대 + 굵은 수치).</p>
         <div class="cam-figure">
           <div class="cam-controls">
             <label for="cam-class">설명 지도</label>
@@ -923,7 +961,8 @@ def build_demo() -> str:
 
   var sess = null, currentImg = null, lastCam = null, lastLogits = null, curClass = 0, curTruth = '';
   var meanCam = null;   // 검증 240장 평균 CAM (12x12x12) — 빈 모서리의 상수 오프셋을 뺀다
-  var THR = LABELS.map(function () { return 0.5; });   // 라벨별 컷오프 (validation Youden)
+  var THR = LABELS.map(function () { return 0.5; });   // 라벨별 컷오프 (보정 확률 기준 Youden)
+  var CAL = null;   // 라벨별 isotonic 보정 knots {x:[], y:[]}
 
   function setStatus(t) { status.textContent = t; }
 
@@ -935,19 +974,19 @@ def build_demo() -> str:
   }).join('');
   camSel.innerHTML = LABELS.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
 
-  fetch('data/thresholds.json').then(function (r) { return r.json(); }).then(function (d) {
+  fetch('data/calibration.json').then(function (r) { return r.json(); }).then(function (d) {
+    CAL = d.labels.map(function (k) { return d.per_label[k]; });
     LABELS.forEach(function (name, i) {
-      var key = d.labels ? d.labels[i] : null;
-      var e = key ? d.per_label[key] : null;
-      if (e && e.youden && typeof e.youden.thr === 'number') THR[i] = e.youden.thr;
+      var e = CAL[i];
+      if (!e) return;
+      THR[i] = e.thr_cal;
       var li = resultsEl.children[i];
-      if (li) {
-        var cut = li.querySelector('.cutoff');
-        cut.style.left = (THR[i] * 100).toFixed(1) + '%';
-        cut.title = '컷오프 ' + THR[i].toFixed(2) + ' (validation Youden)';
-        var cv = li.querySelector('.cutoff-val');
-        if (cv) cv.textContent = '컷 ' + (THR[i] * 100).toFixed(0);
-      }
+      if (!li) return;
+      var cut = li.querySelector('.cutoff');
+      cut.style.left = (THR[i] * 100).toFixed(1) + '%';
+      cut.title = '컷오프 ' + (THR[i] * 100).toFixed(1) + '% (보정 확률 기준 Youden)';
+      var cv = li.querySelector('.cutoff-val');
+      if (cv) cv.textContent = '컷 ' + (THR[i] * 100).toFixed(1) + '%';
     });
     if (lastLogits) renderResults(lastLogits, lastCam, 0);
   }).catch(function () {});
@@ -1002,6 +1041,20 @@ def build_demo() -> str:
   }
 
   function sigmoid(v) { return 1 / (1 + Math.exp(-v)); }
+
+  function calibrate(i, p) {
+    var c = CAL && CAL[i];
+    if (!c || !c.x || !c.x.length) return p;
+    var x = c.x, y = c.y;
+    if (p <= x[0]) return y[0];
+    for (var k = 1; k < x.length; k++) {
+      if (p <= x[k]) {
+        var w = (p - x[k - 1]) / ((x[k] - x[k - 1]) || 1e-6);
+        return y[k - 1] + w * (y[k] - y[k - 1]);
+      }
+    }
+    return y[y.length - 1];
+  }
 
   function jet(t) {
     t = Math.max(0, Math.min(1, t));
@@ -1069,7 +1122,7 @@ def build_demo() -> str:
     lastLogits = logits;
     var items = Array.prototype.slice.call(resultsEl.children);
     var best = 0;
-    var probs = Array.prototype.map.call(logits, sigmoid);
+    var probs = Array.prototype.map.call(logits, function (v, i) { return calibrate(i, sigmoid(v)); });
     probs.forEach(function (p, i) { if (p > probs[best]) best = i; });
     items.forEach(function (li, i) {
       var p = probs[i];
@@ -1085,7 +1138,7 @@ def build_demo() -> str:
     var pos = probs.filter(function (v, i) { return v >= THR[i]; }).length;
     panelNote.textContent = (curTruth ? curTruth + ' · ' : '') +
       '컷오프 초과 ' + pos + '개 · 최고 ' + LABELS[best] + ' ' + Math.round(probs[best] * 100) + '%' +
-      ' — 컷오프는 validation Youden 지점(라벨별)이고 확률은 보정 전입니다.';
+      ' — 컷오프는 보정 확률 기준 validation Youden 지점입니다.';
     if (curClass !== best && !camSel.dataset.touched) {
       curClass = best;
       camSel.value = String(best);

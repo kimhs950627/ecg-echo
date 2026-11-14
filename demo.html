@@ -70,8 +70,9 @@
         <p class="status-note" id="panel-note">이미지를 넣으면 12개 소견의 가능성이 표시됩니다.
         0.50 을 넘는 항목이 “양성”으로 강조됩니다.</p>
         <ul class="result-list" id="results"></ul>
-        <p class="cutoff-legend">세로 눈금 = <b>라벨별 컷오프</b>(validation Youden 지점), 라벨 옆 흐린 숫자가 그 값입니다.
-        넘으면 양성 표시(진한 막대 + 굵은 수치). 확률은 보정 전이므로 순위 비교용으로 보세요.</p>
+        <p class="cutoff-legend">표시되는 확률은 validation isotonic 보정을 거친 값입니다.
+        세로 눈금 = <b>라벨별 컷오프</b>(보정 확률 위의 Youden 지점), 라벨 옆 흐린 숫자가 그 값입니다.
+        넘으면 양성 표시(진한 막대 + 굵은 수치).</p>
         <div class="cam-figure">
           <div class="cam-controls">
             <label for="cam-class">설명 지도</label>
@@ -108,15 +109,22 @@
         </ul>
         <div class="table-scroll">
         
-        <h3>라벨별 컷오프 (validation Youden)</h3>
+        <h3>확률 보정과 라벨별 컷오프</h3>
+        <p>모델의 sigmoid 출력은 양성 가중 학습 때문에 부풀려져 있습니다. validation 예측으로 <b>라벨별 isotonic 회귀</b>를
+        적합해 확률을 실제 빈도에 맞췄습니다(Brier score 가 절반 안팎으로 줄었습니다). 데모가 보여주는 숫자는
+        <b>보정된 확률</b>이고, 막대의 세로 눈금은 <b>보정 확률 위에서 다시 계산한 Youden 지점</b>입니다.</p>
+        <div class="table-scroll">
         <table class="data">
-          <caption>민감도+특이도를 최대로 하는 지점. 데모 막대의 세로 눈금이 이 값입니다.</caption>
-          <thead><tr><th>라벨</th><th>유병률</th><th>AUROC</th><th>컷오프</th><th>민감도/특이도</th></tr></thead>
-          <tbody><tr><td>LVEF ≤ 45%</td><td class="num">22.6%</td><td class="num">0.837</td><td class="num"><b>0.58</b></td><td class="num">0.66 / 0.86</td></tr><tr><td>LVWT ≥ 13 mm</td><td class="num">23.4%</td><td class="num">0.742</td><td class="num"><b>0.56</b></td><td class="num">0.69 / 0.67</td></tr><tr><td>AS ≥ moderate</td><td class="num">3.8%</td><td class="num">0.797</td><td class="num"><b>0.47</b></td><td class="num">0.65 / 0.79</td></tr><tr><td>AR ≥ moderate</td><td class="num">1.1%</td><td class="num">0.710</td><td class="num"><b>0.22</b></td><td class="num">0.51 / 0.82</td></tr><tr><td>MR ≥ moderate</td><td class="num">8.1%</td><td class="num">0.794</td><td class="num"><b>0.47</b></td><td class="num">0.74 / 0.73</td></tr><tr><td>TR ≥ moderate</td><td class="num">9.9%</td><td class="num">0.772</td><td class="num"><b>0.51</b></td><td class="num">0.67 / 0.73</td></tr><tr><td>PR ≥ moderate</td><td class="num">0.7%</td><td class="num">0.785</td><td class="num"><b>0.04</b></td><td class="num">0.82 / 0.64</td></tr><tr><td>RV dysfunction ≥ mod</td><td class="num">13.1%</td><td class="num">0.822</td><td class="num"><b>0.53</b></td><td class="num">0.72 / 0.78</td></tr><tr><td>Pericardial effusion</td><td class="num">2.7%</td><td class="num">0.729</td><td class="num"><b>0.24</b></td><td class="num">0.78 / 0.59</td></tr><tr><td>PASP ≥ 45 mmHg</td><td class="num">19.4%</td><td class="num">0.721</td><td class="num"><b>0.51</b></td><td class="num">0.61 / 0.70</td></tr><tr><td>TR max ≥ 3.2 m/s</td><td class="num">10.5%</td><td class="num">0.716</td><td class="num"><b>0.46</b></td><td class="num">0.67 / 0.64</td></tr><tr><td>SHD composite</td><td class="num">50.1%</td><td class="num">0.809</td><td class="num"><b>0.57</b></td><td class="num">0.69 / 0.79</td></tr></tbody>
+          <caption>보정(cross-fit: 절반에서 적합, 나머지 절반에서 평가)</caption>
+          <thead><tr><th>라벨</th><th>AUROC</th><th>Brier(전)</th><th>Brier(후)</th><th>컷오프</th><th>민감도/특이도</th></tr></thead>
+          <tbody><tr><td>LVEF ≤ 45%</td><td class="num">0.834</td><td class="num">0.151</td><td class="num">0.121</td><td class="num"><b>0.344</b></td><td class="num">0.65 / 0.86</td></tr><tr><td>LVWT ≥ 13 mm</td><td class="num">0.739</td><td class="num">0.230</td><td class="num">0.156</td><td class="num"><b>0.273</b></td><td class="num">0.70 / 0.67</td></tr><tr><td>AS ≥ moderate</td><td class="num">0.800</td><td class="num">0.133</td><td class="num">0.033</td><td class="num"><b>0.059</b></td><td class="num">0.67 / 0.79</td></tr><tr><td>AR ≥ moderate</td><td class="num">0.716</td><td class="num">0.040</td><td class="num">0.010</td><td class="num"><b>0.013</b></td><td class="num">0.80 / 0.53</td></tr><tr><td>MR ≥ moderate</td><td class="num">0.793</td><td class="num">0.169</td><td class="num">0.067</td><td class="num"><b>0.118</b></td><td class="num">0.70 / 0.75</td></tr><tr><td>TR ≥ moderate</td><td class="num">0.774</td><td class="num">0.182</td><td class="num">0.077</td><td class="num"><b>0.099</b></td><td class="num">0.73 / 0.68</td></tr><tr><td>PR ≥ moderate</td><td class="num">0.764</td><td class="num">0.014</td><td class="num">0.006</td><td class="num"><b>0.018</b></td><td class="num">0.56 / 0.80</td></tr><tr><td>RV dysfunction ≥ mod</td><td class="num">0.825</td><td class="num">0.170</td><td class="num">0.092</td><td class="num"><b>0.172</b></td><td class="num">0.68 / 0.81</td></tr><tr><td>Pericardial effusion</td><td class="num">0.719</td><td class="num">0.108</td><td class="num">0.029</td><td class="num"><b>0.021</b></td><td class="num">0.74 / 0.59</td></tr><tr><td>PASP ≥ 45 mmHg</td><td class="num">0.724</td><td class="num">0.201</td><td class="num">0.138</td><td class="num"><b>0.236</b></td><td class="num">0.56 / 0.76</td></tr><tr><td>TR max ≥ 3.2 m/s</td><td class="num">0.718</td><td class="num">0.197</td><td class="num">0.086</td><td class="num"><b>0.128</b></td><td class="num">0.59 / 0.74</td></tr><tr><td>SHD composite</td><td class="num">0.805</td><td class="num">0.181</td><td class="num">0.179</td><td class="num"><b>0.553</b></td><td class="num">0.69 / 0.78</td></tr></tbody>
         </table>
-        <p class="muted">출처: validation group split · 8,000장 표본 (잠정, full 19,196 재계산 예정) · 표본 8,000장.
-        희귀 라벨(AR·PR·삼출)의 컷오프가 0.05–0.24 로 낮은 것은, 0.50 일괄 기준이 그 소견들을 사실상 지웠다는 뜻입니다.
-        full validation 으로 재계산하면 이 표가 갱신됩니다.</p>
+        </div>
+        <figure><img src="assets/roc_val.png" alt="검증 ROC 곡선 12개 라벨, Youden 점 표시" width="1200" height="820" loading="lazy"><figcaption>validation group split(n=12,816)의 라벨별 ROC. 점이 Youden 지점입니다.</figcaption></figure>
+        <p class="muted">희귀 라벨(AR·PR·삼출)의 컷오프가 1–2% 로 보이는 것은 버그가 아닙니다 — 유병률이 1% 안팎이라
+        “양성 판단”에 해당하는 사후확률 자체가 낮습니다. 반대로 SHD(유병률 50%)는 컷오프가 0.55 로 높습니다.
+        Youden 은 민감도+특이도를 최대화하는 지점이라 PPV 를 최적화하지 않는다는 점도 같이 봐주세요.</p>
+        <p class="muted">출처: validation group split, cross-fitted (fit half A, evaluated half B) · 표본 12,816장.</p>
 
         </div>
         <h3>해석할 때 주의</h3>
@@ -186,7 +194,7 @@
     <hr class="rule">
     <div class="prose">
       <h2>사진 증강은 이겼는가 — 졌습니다</h2>
-      <p>같은 환자 단위 그룹 val(n=19,196)에서, 증강 없이 학습한 모델과
+      <p>같은 환자 단위 그룹 val(n=12,816)에서, 증강 없이 학습한 모델과
       사진 시뮬레이션 증강(원근 16종·광도·감마·색온도·흐림·노이즈·그림자·헤더 마스킹)으로 학습한 모델을
       같은 4조건으로 채점했습니다. 증강 모델은 <b>모든 조건에서 더 낮았습니다</b>.</p>
       <table class="data">
@@ -334,7 +342,8 @@
 
   var sess = null, currentImg = null, lastCam = null, lastLogits = null, curClass = 0, curTruth = '';
   var meanCam = null;   // 검증 240장 평균 CAM (12x12x12) — 빈 모서리의 상수 오프셋을 뺀다
-  var THR = LABELS.map(function () { return 0.5; });   // 라벨별 컷오프 (validation Youden)
+  var THR = LABELS.map(function () { return 0.5; });   // 라벨별 컷오프 (보정 확률 기준 Youden)
+  var CAL = null;   // 라벨별 isotonic 보정 knots {x:[], y:[]}
 
   function setStatus(t) { status.textContent = t; }
 
@@ -346,19 +355,19 @@
   }).join('');
   camSel.innerHTML = LABELS.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
 
-  fetch('data/thresholds.json').then(function (r) { return r.json(); }).then(function (d) {
+  fetch('data/calibration.json').then(function (r) { return r.json(); }).then(function (d) {
+    CAL = d.labels.map(function (k) { return d.per_label[k]; });
     LABELS.forEach(function (name, i) {
-      var key = d.labels ? d.labels[i] : null;
-      var e = key ? d.per_label[key] : null;
-      if (e && e.youden && typeof e.youden.thr === 'number') THR[i] = e.youden.thr;
+      var e = CAL[i];
+      if (!e) return;
+      THR[i] = e.thr_cal;
       var li = resultsEl.children[i];
-      if (li) {
-        var cut = li.querySelector('.cutoff');
-        cut.style.left = (THR[i] * 100).toFixed(1) + '%';
-        cut.title = '컷오프 ' + THR[i].toFixed(2) + ' (validation Youden)';
-        var cv = li.querySelector('.cutoff-val');
-        if (cv) cv.textContent = '컷 ' + (THR[i] * 100).toFixed(0);
-      }
+      if (!li) return;
+      var cut = li.querySelector('.cutoff');
+      cut.style.left = (THR[i] * 100).toFixed(1) + '%';
+      cut.title = '컷오프 ' + (THR[i] * 100).toFixed(1) + '% (보정 확률 기준 Youden)';
+      var cv = li.querySelector('.cutoff-val');
+      if (cv) cv.textContent = '컷 ' + (THR[i] * 100).toFixed(1) + '%';
     });
     if (lastLogits) renderResults(lastLogits, lastCam, 0);
   }).catch(function () {});
@@ -413,6 +422,20 @@
   }
 
   function sigmoid(v) { return 1 / (1 + Math.exp(-v)); }
+
+  function calibrate(i, p) {
+    var c = CAL && CAL[i];
+    if (!c || !c.x || !c.x.length) return p;
+    var x = c.x, y = c.y;
+    if (p <= x[0]) return y[0];
+    for (var k = 1; k < x.length; k++) {
+      if (p <= x[k]) {
+        var w = (p - x[k - 1]) / ((x[k] - x[k - 1]) || 1e-6);
+        return y[k - 1] + w * (y[k] - y[k - 1]);
+      }
+    }
+    return y[y.length - 1];
+  }
 
   function jet(t) {
     t = Math.max(0, Math.min(1, t));
@@ -480,7 +503,7 @@
     lastLogits = logits;
     var items = Array.prototype.slice.call(resultsEl.children);
     var best = 0;
-    var probs = Array.prototype.map.call(logits, sigmoid);
+    var probs = Array.prototype.map.call(logits, function (v, i) { return calibrate(i, sigmoid(v)); });
     probs.forEach(function (p, i) { if (p > probs[best]) best = i; });
     items.forEach(function (li, i) {
       var p = probs[i];
@@ -496,7 +519,7 @@
     var pos = probs.filter(function (v, i) { return v >= THR[i]; }).length;
     panelNote.textContent = (curTruth ? curTruth + ' · ' : '') +
       '컷오프 초과 ' + pos + '개 · 최고 ' + LABELS[best] + ' ' + Math.round(probs[best] * 100) + '%' +
-      ' — 컷오프는 validation Youden 지점(라벨별)이고 확률은 보정 전입니다.';
+      ' — 컷오프는 보정 확률 기준 validation Youden 지점입니다.';
     if (curClass !== best && !camSel.dataset.touched) {
       curClass = best;
       camSel.value = String(best);
@@ -586,7 +609,7 @@
     </div>
     <div class="footer-meta">
       contact: <a href="https://github.com/kimhs950627/ecg-echo">github.com/kimhs950627/ecg-echo</a><br>
-      built 2026-11-14 · figures by <code>tools/make_eda.py</code><br>
+      built 2026-11-15 · figures by <code>tools/make_eda.py</code><br>
       source dataset: EchoNext (Muhammad Fasseh, Kaggle)
     </div>
   </div>
