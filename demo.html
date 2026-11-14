@@ -70,8 +70,8 @@
         <p class="status-note" id="panel-note">이미지를 넣으면 12개 소견의 가능성이 표시됩니다.
         0.50 을 넘는 항목이 “양성”으로 강조됩니다.</p>
         <ul class="result-list" id="results"></ul>
-        <p class="cutoff-legend">세로 눈금 = 0.50 · 넘으면 해당 소견 양성 표시(진한 막대 + 굵은 수치).
-        보정 전 확률이라 컷오프 자체는 검증되지 않았습니다.</p>
+        <p class="cutoff-legend">세로 눈금 = <b>라벨별 컷오프</b>(validation Youden 지점). 넘으면 양성 표시(진한 막대 + 굵은 수치).
+        확률은 보정 전이므로 순위 비교용으로 보세요.</p>
         <div class="cam-figure">
           <div class="cam-controls">
             <label for="cam-class">설명 지도</label>
@@ -92,9 +92,10 @@
     <div class="grid-2">
       <div class="prose">
         <h2>임상 해석</h2>
-        <p>0.50 을 넘으면 해당 소견이 <b>있을 가능성이 높다고 표시</b>됩니다(점선 없이 채워진 막대 + 굵은 수치).
-        다만 이 확률은 <b>보정 전</b>이라 0.50 은 검증된 컷오프가 아닙니다. 값 자체보다 <b>상위 2–3개 라벨</b>과
-        좌우 대칭성을 보세요.</p>
+        <p>막대의 세로 눈금이 <b>라벨별 컷오프</b>입니다 — validation ROC 의 Youden 지점(민감도+특이도 최대)으로
+        라벨마다 다릅니다. 눈금을 넘으면 해당 소견이 <b>있을 가능성이 높다고 표시</b>됩니다(진한 막대 + 굵은 수치).
+        LVEF 처럼 유병률이 낮은 라벨은 컷오프가 낮고, SHD 처럼 흔한 라벨은 높게 잡힙니다.
+        값 자체보다 <b>상위 2–3개 라벨</b>과 좌우 대칭성을 보세요.</p>
         <h3>라벨이 뜻하는 것</h3>
         <ul>
           <li><b>LVEF ≤ 45%</b> — 좌심실 수축기능 저하. 가장 중요한 단일 지표. 상승 시 심초음파 우선.</li>
@@ -167,6 +168,36 @@
       헤더·판독문을 끈 ablation 렌더가 다음 필수 단계인 이유입니다.</p>
     </div>
     <figure class="figure"><img src="assets/explainers.png" alt="EfficientNetB0 Grad-CAM 과 ViT attention rollout 비교" width="1131" height="1546"></figure>
+
+    
+    <hr class="rule">
+    <div class="prose">
+      <h2>사진 증강은 이겼는가 — 졌습니다</h2>
+      <p>같은 환자 단위 그룹 val(n=19,196)에서, 증강 없이 학습한 모델과
+      사진 시뮬레이션 증강(원근 16종·광도·감마·색온도·흐림·노이즈·그림자·헤더 마스킹)으로 학습한 모델을
+      같은 4조건으로 채점했습니다. 증강 모델은 <b>모든 조건에서 더 낮았습니다</b>.</p>
+      <table class="data">
+        <caption>macro AUROC — 학습 조건 vs 평가 조건</caption>
+        <thead><tr><th>평가 조건</th><th>증강 없음</th><th>사진 증강</th><th>Δ</th></tr></thead>
+        <tbody><tr><td>원본</td><td class="num">0.7676</td><td class="num">0.7616</td><td class="num"><b class="neg">-0.0060</b></td></tr><tr><td>상단 25% 가림</td><td class="num">0.7663</td><td class="num">0.7609</td><td class="num"><b class="neg">-0.0054</b></td></tr><tr><td>상단 50% 가림</td><td class="num">0.7368</td><td class="num">0.7242</td><td class="num"><b class="neg">-0.0126</b></td></tr><tr><td>상단 20% 잘라 확대</td><td class="num">0.7680</td><td class="num">0.7505</td><td class="num"><b class="neg">-0.0175</b></td></tr></tbody>
+      </table>
+      <table class="data">
+        <caption>주요 라벨 (원본 조건)</caption>
+        <thead><tr><th>라벨</th><th>증강 없음</th><th>사진 증강</th><th>Δ</th></tr></thead>
+        <tbody><tr><td>LVEF<=45</td><td class="num">0.8341</td><td class="num">0.8309</td><td class="num"><b class="neg">-0.0032</b></td></tr><tr><td>SHD</td><td class="num">0.8051</td><td class="num">0.8050</td><td class="num"><b class="neg">-0.0001</b></td></tr></tbody>
+      </table>
+      <p>읽는 법이 세 가지로 갈립니다.</p>
+      <ul>
+        <li><b>증강은 손해였다</b> — 원본 −0.006, 상단 25% 가림 −0.005, 50% 가림 −0.013, 20% 크롭 −0.018.
+        “강건성을 사고 성능을 조금 판다”가 아니라 <b>둘 다 잃은</b> 형태입니다.</li>
+        <li><b>원본 모델이 이미 강건하다</b> — 증강 없이도 상단 25%를 가려도 −0.001, 20% 크롭에서 오히려 +0.0004.
+        결과지에서 헤더 텍스트가 결정에 거의 쓰이지 않는다는 뜻이고, 앞선 판독문 제거 ablation(Δ −0.013)과 일치합니다.</li>
+        <li><b>그래서 배포 가중치는 증강 없음(384) 유지</b>. 사진 도메인 간극은 합성 증강으로 메우는 문제가 아니라
+        실제 촬영본이 필요한 문제로 보입니다.</li>
+      </ul>
+      <p class="muted">증강 모델은 12 epoch, 원본은 6 epoch 로 학습 예산이 다릅니다. 다만 증강 쪽이 더 오래
+      학습했는데도 낮으므로 결론은 바뀌지 않습니다(에폭 부족으로 설명되지 않음).</p>
+    </div>
 
     
     <hr class="rule">
@@ -290,6 +321,7 @@
 
   var sess = null, currentImg = null, lastCam = null, lastLogits = null, curClass = 0, curTruth = '';
   var meanCam = null;   // 검증 240장 평균 CAM (12x12x12) — 빈 모서리의 상수 오프셋을 뺀다
+  var THR = LABELS.map(function () { return 0.5; });   // 라벨별 컷오프 (validation Youden)
 
   function setStatus(t) { status.textContent = t; }
 
@@ -299,6 +331,21 @@
            '<span class="cutoff" title="0.50 기준"></span></div></li>';
   }).join('');
   camSel.innerHTML = LABELS.map(function (n, i) { return '<option value="' + i + '">' + n + '</option>'; }).join('');
+
+  fetch('data/thresholds.json').then(function (r) { return r.json(); }).then(function (d) {
+    LABELS.forEach(function (name, i) {
+      var key = d.labels ? d.labels[i] : null;
+      var e = key ? d.per_label[key] : null;
+      if (e && e.youden && typeof e.youden.thr === 'number') THR[i] = e.youden.thr;
+      var li = resultsEl.children[i];
+      if (li) {
+        var cut = li.querySelector('.cutoff');
+        cut.style.left = (THR[i] * 100).toFixed(1) + '%';
+        cut.title = '컷오프 ' + THR[i].toFixed(2) + ' (validation Youden)';
+      }
+    });
+    if (lastLogits) renderResults(lastLogits, lastCam, 0);
+  }).catch(function () {});
 
   fetch('data/mean_cam.json').then(function (r) { return r.json(); })
     .then(function (d) { meanCam = d.mean_cam; })
@@ -422,17 +469,18 @@
     items.forEach(function (li, i) {
       var p = probs[i];
       li.querySelector('.mono').textContent = (p * 100).toFixed(1) + '%';
-      li.classList.toggle('is-positive', p >= 0.5);
-      li.querySelector('.mono').setAttribute('title', p >= 0.5 ? '0.50 이상' : '');
+      li.classList.toggle('is-positive', p >= THR[i]);
+      li.querySelector('.mono').setAttribute('title',
+        (p >= THR[i] ? '컷오프 초과 · ' : '컷오프 미만 · ') + '기준 ' + THR[i].toFixed(2));
       var fill = li.querySelector('.fill');
       fill.style.width = Math.max(1, p * 100).toFixed(1) + '%';
       li.classList.toggle('is-top', i === best);
     });
     timingEl.textContent = ms.toFixed(0) + ' ms';
-    var pos = probs.filter(function (v) { return v >= 0.5; }).length;
+    var pos = probs.filter(function (v, i) { return v >= THR[i]; }).length;
     panelNote.textContent = (curTruth ? curTruth + ' · ' : '') +
-      '0.50 이상 ' + pos + '개 · 최고 ' + LABELS[best] + ' ' + Math.round(probs[best] * 100) + '%' +
-      ' — 보정 전 확률이라 컷오프 판단에는 쓰지 않습니다.';
+      '컷오프 초과 ' + pos + '개 · 최고 ' + LABELS[best] + ' ' + Math.round(probs[best] * 100) + '%' +
+      ' — 컷오프는 validation Youden 지점(라벨별)이고 확률은 보정 전입니다.';
     if (curClass !== best && !camSel.dataset.touched) {
       curClass = best;
       camSel.value = String(best);
@@ -522,7 +570,7 @@
     </div>
     <div class="footer-meta">
       contact: <a href="https://github.com/kimhs950627/ecg-echo">github.com/kimhs950627/ecg-echo</a><br>
-      built 2026-11-12 · figures by <code>tools/make_eda.py</code><br>
+      built 2026-11-14 · figures by <code>tools/make_eda.py</code><br>
       source dataset: EchoNext (Muhammad Fasseh, Kaggle)
     </div>
   </div>

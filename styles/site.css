@@ -271,3 +271,6 @@ table.data tr:last-child td { border-bottom: 0; }
   html { scroll-behavior: auto; }
   * { transition: none !important; animation: none !important; }
 }
+
+.num b.pos { color: #2f6b4f; }
+.num b.neg { color: #a4402c; }

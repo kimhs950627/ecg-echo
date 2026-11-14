@@ -1,0 +1,35 @@
+{
+ "n_val": 19196,
+ "baseline": {
+  "full": 0.7676,
+  "mask25": 0.7663,
+  "mask50": 0.7368,
+  "crop20": 0.768
+ },
+ "photoaug": {
+  "full": 0.7616,
+  "mask25": 0.7609,
+  "mask50": 0.7242,
+  "crop20": 0.7505
+ },
+ "labels": [
+  "LVEF<=45",
+  "SHD"
+ ],
+ "per_label": {
+  "baseline": {
+   "LVEF<=45": 0.8341,
+   "SHD": 0.8051
+  },
+  "photoaug": {
+   "LVEF<=45": 0.8309,
+   "SHD": 0.805
+  }
+ },
+ "conditions": {
+  "full": "원본",
+  "mask25": "상단 25% 가림",
+  "mask50": "상단 50% 가림",
+  "crop20": "상단 20% 잘라 확대"
+ }
+}
