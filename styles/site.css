@@ -274,3 +274,9 @@ table.data tr:last-child td { border-bottom: 0; }
 
 .num b.pos { color: #2f6b4f; }
 .num b.neg { color: #a4402c; }
+
+.cutoff-val { font-size: 0.78em; color: var(--color-muted); font-weight: 400; white-space: nowrap; }
+.cutoff-val:empty { display: none; }
+
+.grid-2 > * { min-width: 0; }
+.prose .table-scroll { max-width: 100%; }

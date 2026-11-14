@@ -70,8 +70,8 @@
         <p class="status-note" id="panel-note">이미지를 넣으면 12개 소견의 가능성이 표시됩니다.
         0.50 을 넘는 항목이 “양성”으로 강조됩니다.</p>
         <ul class="result-list" id="results"></ul>
-        <p class="cutoff-legend">세로 눈금 = <b>라벨별 컷오프</b>(validation Youden 지점). 넘으면 양성 표시(진한 막대 + 굵은 수치).
-        확률은 보정 전이므로 순위 비교용으로 보세요.</p>
+        <p class="cutoff-legend">세로 눈금 = <b>라벨별 컷오프</b>(validation Youden 지점), 라벨 옆 흐린 숫자가 그 값입니다.
+        넘으면 양성 표시(진한 막대 + 굵은 수치). 확률은 보정 전이므로 순위 비교용으로 보세요.</p>
         <div class="cam-figure">
           <div class="cam-controls">
             <label for="cam-class">설명 지도</label>
@@ -106,6 +106,19 @@
           <li><b>PASP ≥ 45 mmHg · TR max ≥ 3.2 m/s</b> — 폐고혈압 시사(TR 제트에서 추정).</li>
           <li><b>Pericardial effusion</b> — 중등도 이상 심낭삼출.</li>
         </ul>
+        <div class="table-scroll">
+        
+        <h3>라벨별 컷오프 (validation Youden)</h3>
+        <table class="data">
+          <caption>민감도+특이도를 최대로 하는 지점. 데모 막대의 세로 눈금이 이 값입니다.</caption>
+          <thead><tr><th>라벨</th><th>유병률</th><th>AUROC</th><th>컷오프</th><th>민감도/특이도</th></tr></thead>
+          <tbody><tr><td>LVEF ≤ 45%</td><td class="num">22.6%</td><td class="num">0.837</td><td class="num"><b>0.58</b></td><td class="num">0.66 / 0.86</td></tr><tr><td>LVWT ≥ 13 mm</td><td class="num">23.4%</td><td class="num">0.742</td><td class="num"><b>0.56</b></td><td class="num">0.69 / 0.67</td></tr><tr><td>AS ≥ moderate</td><td class="num">3.8%</td><td class="num">0.797</td><td class="num"><b>0.47</b></td><td class="num">0.65 / 0.79</td></tr><tr><td>AR ≥ moderate</td><td class="num">1.1%</td><td class="num">0.710</td><td class="num"><b>0.22</b></td><td class="num">0.51 / 0.82</td></tr><tr><td>MR ≥ moderate</td><td class="num">8.1%</td><td class="num">0.794</td><td class="num"><b>0.47</b></td><td class="num">0.74 / 0.73</td></tr><tr><td>TR ≥ moderate</td><td class="num">9.9%</td><td class="num">0.772</td><td class="num"><b>0.51</b></td><td class="num">0.67 / 0.73</td></tr><tr><td>PR ≥ moderate</td><td class="num">0.7%</td><td class="num">0.785</td><td class="num"><b>0.04</b></td><td class="num">0.82 / 0.64</td></tr><tr><td>RV dysfunction ≥ mod</td><td class="num">13.1%</td><td class="num">0.822</td><td class="num"><b>0.53</b></td><td class="num">0.72 / 0.78</td></tr><tr><td>Pericardial effusion</td><td class="num">2.7%</td><td class="num">0.729</td><td class="num"><b>0.24</b></td><td class="num">0.78 / 0.59</td></tr><tr><td>PASP ≥ 45 mmHg</td><td class="num">19.4%</td><td class="num">0.721</td><td class="num"><b>0.51</b></td><td class="num">0.61 / 0.70</td></tr><tr><td>TR max ≥ 3.2 m/s</td><td class="num">10.5%</td><td class="num">0.716</td><td class="num"><b>0.46</b></td><td class="num">0.67 / 0.64</td></tr><tr><td>SHD composite</td><td class="num">50.1%</td><td class="num">0.809</td><td class="num"><b>0.57</b></td><td class="num">0.69 / 0.79</td></tr></tbody>
+        </table>
+        <p class="muted">출처: validation group split · 8,000장 표본 (잠정, full 19,196 재계산 예정) · 표본 8,000장.
+        희귀 라벨(AR·PR·삼출)의 컷오프가 0.05–0.24 로 낮은 것은, 0.50 일괄 기준이 그 소견들을 사실상 지웠다는 뜻입니다.
+        full validation 으로 재계산하면 이 표가 갱신됩니다.</p>
+
+        </div>
         <h3>해석할 때 주의</h3>
         <ul>
           <li>조합이 임상적으로 더 중요합니다 — <b>LVEF↓ + SHD</b> 는 고위험, <b>PASP↑ + TR↑</b> 는 폐고혈압 평가,
@@ -326,7 +339,8 @@
   function setStatus(t) { status.textContent = t; }
 
   resultsEl.innerHTML = LABELS.map(function (name, i) {
-    return '<li data-i="' + i + '"><span>' + name + '</span><span class="mono">—</span>' +
+    return '<li data-i="' + i + '"><span>' + name + ' <span class="cutoff-val"></span></span>' +
+           '<span class="mono">—</span>' +
            '<div class="track"><div class="fill" style="width:0%"></div>' +
            '<span class="cutoff" title="0.50 기준"></span></div></li>';
   }).join('');
@@ -342,6 +356,8 @@
         var cut = li.querySelector('.cutoff');
         cut.style.left = (THR[i] * 100).toFixed(1) + '%';
         cut.title = '컷오프 ' + THR[i].toFixed(2) + ' (validation Youden)';
+        var cv = li.querySelector('.cutoff-val');
+        if (cv) cv.textContent = '컷 ' + (THR[i] * 100).toFixed(0);
       }
     });
     if (lastLogits) renderResults(lastLogits, lastCam, 0);

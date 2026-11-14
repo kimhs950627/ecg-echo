@@ -583,6 +583,54 @@ def ablation_block() -> str:
 
 
 
+
+SHORT_KO = {
+    "lvef_lte_45_flag": "LVEF ≤ 45%",
+    "lvwt_gte_13_flag": "LVWT ≥ 13 mm",
+    "aortic_stenosis_moderate_or_greater_flag": "AS ≥ moderate",
+    "aortic_regurgitation_moderate_or_greater_flag": "AR ≥ moderate",
+    "mitral_regurgitation_moderate_or_greater_flag": "MR ≥ moderate",
+    "tricuspid_regurgitation_moderate_or_greater_flag": "TR ≥ moderate",
+    "pulmonary_regurgitation_moderate_or_greater_flag": "PR ≥ moderate",
+    "rv_systolic_dysfunction_moderate_or_greater_flag": "RV dysfunction ≥ mod",
+    "pericardial_effusion_moderate_large_flag": "Pericardial effusion",
+    "pasp_gte_45_flag": "PASP ≥ 45 mmHg",
+    "tr_max_gte_32_flag": "TR max ≥ 3.2 m/s",
+    "shd_moderate_or_greater_flag": "SHD composite",
+}
+
+
+def threshold_table() -> str:
+    j = ROOT / "data" / "thresholds.json"
+    if not j.exists():
+        return ""
+    d = json.loads(j.read_text())
+    rows = ""
+    for k in d["labels"]:
+        e = d["per_label"][k]
+        y = e.get("youden") or {}
+        thr = y.get("thr")
+        if thr is None:
+            continue
+        rows += (
+            f'<tr><td>{SHORT_KO.get(k, k)}</td>'
+            f'<td class="num">{e["prevalence"] * 100:.1f}%</td>'
+            f'<td class="num">{e.get("auroc", float("nan")):.3f}</td>'
+            f'<td class="num"><b>{thr:.2f}</b></td>'
+            f'<td class="num">{y.get("sens", 0):.2f} / {y.get("spec", 0):.2f}</td></tr>'
+        )
+    return f"""
+        <h3>라벨별 컷오프 (validation Youden)</h3>
+        <table class="data">
+          <caption>민감도+특이도를 최대로 하는 지점. 데모 막대의 세로 눈금이 이 값입니다.</caption>
+          <thead><tr><th>라벨</th><th>유병률</th><th>AUROC</th><th>컷오프</th><th>민감도/특이도</th></tr></thead>
+          <tbody>{rows}</tbody>
+        </table>
+        <p class="muted">출처: {d.get("source", "")} · 표본 {d.get("n_val", 0):,}장.
+        희귀 라벨(AR·PR·삼출)의 컷오프가 0.05–0.24 로 낮은 것은, 0.50 일괄 기준이 그 소견들을 사실상 지웠다는 뜻입니다.
+        full validation 으로 재계산하면 이 표가 갱신됩니다.</p>
+"""
+
 def augment_block() -> str:
     """사진 증강 / 헤더 마스킹 실험 — baseline 과 같은 조건에서 비교."""
     j = ROOT / "data" / "augment.json"
@@ -771,8 +819,8 @@ def build_demo() -> str:
         <p class="status-note" id="panel-note">이미지를 넣으면 12개 소견의 가능성이 표시됩니다.
         0.50 을 넘는 항목이 “양성”으로 강조됩니다.</p>
         <ul class="result-list" id="results"></ul>
-        <p class="cutoff-legend">세로 눈금 = <b>라벨별 컷오프</b>(validation Youden 지점). 넘으면 양성 표시(진한 막대 + 굵은 수치).
-        확률은 보정 전이므로 순위 비교용으로 보세요.</p>
+        <p class="cutoff-legend">세로 눈금 = <b>라벨별 컷오프</b>(validation Youden 지점), 라벨 옆 흐린 숫자가 그 값입니다.
+        넘으면 양성 표시(진한 막대 + 굵은 수치). 확률은 보정 전이므로 순위 비교용으로 보세요.</p>
         <div class="cam-figure">
           <div class="cam-controls">
             <label for="cam-class">설명 지도</label>
@@ -807,6 +855,9 @@ def build_demo() -> str:
           <li><b>PASP ≥ 45 mmHg · TR max ≥ 3.2 m/s</b> — 폐고혈압 시사(TR 제트에서 추정).</li>
           <li><b>Pericardial effusion</b> — 중등도 이상 심낭삼출.</li>
         </ul>
+        <div class="table-scroll">
+        %%THRTABLE%%
+        </div>
         <h3>해석할 때 주의</h3>
         <ul>
           <li>조합이 임상적으로 더 중요합니다 — <b>LVEF↓ + SHD</b> 는 고위험, <b>PASP↑ + TR↑</b> 는 폐고혈압 평가,
@@ -877,7 +928,8 @@ def build_demo() -> str:
   function setStatus(t) { status.textContent = t; }
 
   resultsEl.innerHTML = LABELS.map(function (name, i) {
-    return '<li data-i="' + i + '"><span>' + name + '</span><span class="mono">—</span>' +
+    return '<li data-i="' + i + '"><span>' + name + ' <span class="cutoff-val"></span></span>' +
+           '<span class="mono">—</span>' +
            '<div class="track"><div class="fill" style="width:0%"></div>' +
            '<span class="cutoff" title="0.50 기준"></span></div></li>';
   }).join('');
@@ -893,6 +945,8 @@ def build_demo() -> str:
         var cut = li.querySelector('.cutoff');
         cut.style.left = (THR[i] * 100).toFixed(1) + '%';
         cut.title = '컷오프 ' + THR[i].toFixed(2) + ' (validation Youden)';
+        var cv = li.querySelector('.cutoff-val');
+        if (cv) cv.textContent = '컷 ' + (THR[i] * 100).toFixed(0);
       }
     });
     if (lastLogits) renderResults(lastLogits, lastCam, 0);
@@ -1111,7 +1165,7 @@ def build_demo() -> str:
 })();
 </script>
 """
-    body = body.replace("%%RESULTS%%", results_block()).replace("%%AUGMENT%%", augment_block()).replace("%%ABLATION%%", ablation_block()).replace("%%RESOLUTION%%", resolution_block()).replace("%%CAM%%", cam_overlay_block())
+    body = body.replace("%%RESULTS%%", results_block()).replace("%%AUGMENT%%", augment_block()).replace("%%THRTABLE%%", threshold_table()).replace("%%ABLATION%%", ablation_block()).replace("%%RESOLUTION%%", resolution_block()).replace("%%CAM%%", cam_overlay_block())
     return shell(
         "데모 — 결과지 사진에서 심초음파 라벨 예측",
         "심전도 결과지 이미지를 넣으면 심초음파 12개 라벨 확률을 반환하는 웹 데모. 현재는 입력 화면만 배포된 상태.",

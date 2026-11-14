@@ -1,0 +1,164 @@
+{
+ "source": "validation group split · 8,000장 표본 (잠정, full 19,196 재계산 예정)",
+ "n_val": 8000,
+ "labels": [
+  "lvef_lte_45_flag",
+  "lvwt_gte_13_flag",
+  "aortic_stenosis_moderate_or_greater_flag",
+  "aortic_regurgitation_moderate_or_greater_flag",
+  "mitral_regurgitation_moderate_or_greater_flag",
+  "tricuspid_regurgitation_moderate_or_greater_flag",
+  "pulmonary_regurgitation_moderate_or_greater_flag",
+  "rv_systolic_dysfunction_moderate_or_greater_flag",
+  "pericardial_effusion_moderate_large_flag",
+  "pasp_gte_45_flag",
+  "tr_max_gte_32_flag",
+  "shd_moderate_or_greater_flag"
+ ],
+ "per_label": {
+  "lvef_lte_45_flag": {
+   "prevalence": 0.2257,
+   "youden": {
+    "thr": 0.5754,
+    "sens": 0.661,
+    "spec": 0.863
+   },
+   "sens90": {
+    "thr": 0.1994
+   },
+   "auroc": 0.8373
+  },
+  "lvwt_gte_13_flag": {
+   "prevalence": 0.2342,
+   "youden": {
+    "thr": 0.5596,
+    "sens": 0.693,
+    "spec": 0.674
+   },
+   "sens90": {
+    "thr": 0.4025
+   },
+   "auroc": 0.7419
+  },
+  "aortic_stenosis_moderate_or_greater_flag": {
+   "prevalence": 0.0377,
+   "youden": {
+    "thr": 0.4674,
+    "sens": 0.649,
+    "spec": 0.791
+   },
+   "sens90": {
+    "thr": 0.1819
+   },
+   "auroc": 0.7969
+  },
+  "aortic_regurgitation_moderate_or_greater_flag": {
+   "prevalence": 0.011,
+   "youden": {
+    "thr": 0.222,
+    "sens": 0.511,
+    "spec": 0.822
+   },
+   "sens90": {
+    "thr": 0.0292
+   },
+   "auroc": 0.7103
+  },
+  "mitral_regurgitation_moderate_or_greater_flag": {
+   "prevalence": 0.0814,
+   "youden": {
+    "thr": 0.4715,
+    "sens": 0.736,
+    "spec": 0.728
+   },
+   "sens90": {
+    "thr": 0.2136
+   },
+   "auroc": 0.7938
+  },
+  "tricuspid_regurgitation_moderate_or_greater_flag": {
+   "prevalence": 0.0986,
+   "youden": {
+    "thr": 0.5113,
+    "sens": 0.665,
+    "spec": 0.733
+   },
+   "sens90": {
+    "thr": 0.2599
+   },
+   "auroc": 0.7717
+  },
+  "pulmonary_regurgitation_moderate_or_greater_flag": {
+   "prevalence": 0.0071,
+   "youden": {
+    "thr": 0.0448,
+    "sens": 0.825,
+    "spec": 0.637
+   },
+   "sens90": {
+    "thr": 0.0238
+   },
+   "auroc": 0.7846
+  },
+  "rv_systolic_dysfunction_moderate_or_greater_flag": {
+   "prevalence": 0.1305,
+   "youden": {
+    "thr": 0.5285,
+    "sens": 0.724,
+    "spec": 0.78
+   },
+   "sens90": {
+    "thr": 0.2616
+   },
+   "auroc": 0.822
+  },
+  "pericardial_effusion_moderate_large_flag": {
+   "prevalence": 0.0272,
+   "youden": {
+    "thr": 0.2405,
+    "sens": 0.78,
+    "spec": 0.594
+   },
+   "sens90": {
+    "thr": 0.1268
+   },
+   "auroc": 0.7291
+  },
+  "pasp_gte_45_flag": {
+   "prevalence": 0.1937,
+   "youden": {
+    "thr": 0.5105,
+    "sens": 0.612,
+    "spec": 0.701
+   },
+   "sens90": {
+    "thr": 0.247
+   },
+   "auroc": 0.7207
+  },
+  "tr_max_gte_32_flag": {
+   "prevalence": 0.1046,
+   "youden": {
+    "thr": 0.459,
+    "sens": 0.667,
+    "spec": 0.643
+   },
+   "sens90": {
+    "thr": 0.1983
+   },
+   "auroc": 0.7157
+  },
+  "shd_moderate_or_greater_flag": {
+   "prevalence": 0.5015,
+   "youden": {
+    "thr": 0.5708,
+    "sens": 0.685,
+    "spec": 0.792
+   },
+   "sens90": {
+    "thr": 0.3258
+   },
+   "auroc": 0.809
+  }
+ }
+}
